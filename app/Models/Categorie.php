@@ -2,21 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Categorie extends Model
 {
-    protected $keyType = 'string';
+    use HasUuids;
     public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'name',
         'description',
         'parent_id',
-        'is_income'
+        'is_income',
     ];
 
     /**

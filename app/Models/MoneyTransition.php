@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class MoneyTransition extends Model
 {
+    use HasUuids;
+
     protected $fillable = [
         'amount',
         'description',
         'categorie_id',
-        'user_id'
+        'user_id',
     ];
-
 
     public function categorie()
     {
