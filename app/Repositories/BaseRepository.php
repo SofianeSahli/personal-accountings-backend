@@ -2,8 +2,10 @@
 
 namespace App\Repositories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Pagination\CustomLengthAwarePaginator;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 abstract class BaseRepository
 {
@@ -19,7 +21,7 @@ abstract class BaseRepository
         return $this->model->newQuery()->get($columns);
     }
 
-    public function findByPK(string|int $id, array $columns = ['*']): ?Model
+    public function findByPK(int|string $id, array $columns = ['*']): ?Model
     {
         return $this->model->newQuery()->select($columns)->find($id);
     }
@@ -30,6 +32,7 @@ abstract class BaseRepository
         foreach ($criteria as $field => $value) {
             $query->where($field, $value);
         }
+
         return $query->select($columns)->first();
     }
 
@@ -38,29 +41,54 @@ abstract class BaseRepository
         return $this->model->create($data);
     }
 
-    public function update(string|int $id, array $data): ?Model
+    public function update(int|string $id, array $data): ?Model
     {
         $model = $this->findByPK($id);
         if ($model) {
             $model->update($data);
         }
+
         return $model;
     }
 
-    public function delete(string|int $id): bool
+    public function delete(int|string $id): bool
     {
         $model = $this->findByPK($id);
+
         return $model ? (bool) $model->delete() : false;
     }
 
-    public function query(array $filters = []): Collection
+    public function query(array $filters = [], int $page = 10)
     {
         $query = $this->model->newQuery();
+        $relations = [];
 
         foreach ($filters as $field => $value) {
-            $query->where($field, $value);
+            if (str_contains($field, '.')) {
+                [$relation, $column] = explode('.', $field);
+                array_push($relations, $relation);
+                $query->whereHas($relation, function (Builder $q) use ($column, $value) {
+                    $q->where($column, $value);
+                });
+            } else {
+                $query->where($field, $value);
+            }
         }
 
-        return $query->get();
+        if (empty($page)) {
+            return $query->with($relations);
+        }
+
+        $items = $query->with($relations)->orderBy('created_at', 'desc')->paginate($page);
+        return new CustomLengthAwarePaginator(
+            $items->items(),
+            $items->total(),
+            $items->perPage(),
+            $items->currentPage(),
+            [
+                'path' => $items->path(),
+                'query' => request()->query(),
+            ]
+        );
     }
 }

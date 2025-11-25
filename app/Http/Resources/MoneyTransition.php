@@ -14,6 +14,13 @@ class MoneyTransition extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'amount' => $this->amount,
+            'description' => $this->description,
+            'categorie' => new CategorieResource($this->categorie),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'id' => $this->id,
+        ];
     }
 }

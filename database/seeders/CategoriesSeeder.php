@@ -16,8 +16,8 @@ class CategoriesSeeder extends Seeder
         $incomeParentId = Str::uuid();
         $categories[] = [
             'id' => $incomeParentId,
-            'name' => 'categories.name.income',
-            'description' => 'categories.description.income',
+            'name' => 'categories.name.incomes',
+            'description' => 'categories.description.incomes',
             'parent_id' => null,
             'is_income' => true,
             'created_at' => now(),

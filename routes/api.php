@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('redis.auth')->group(function () {
     Route::post('/profile', [ProfileController::class, 'create']);
+    Route::get('/profile', [ProfileController::class, 'get']);
     Route::patch('/profile/{user}', [ProfileController::class, 'update']);
     Route::get('/categories', [CategoriesController::class, 'get']);
 });
@@ -14,4 +15,6 @@ Route::middleware('redis.auth')->group(function () {
 Route::middleware(['redis.auth', 'query.user'])->group(function () {
     Route::post('/money-transition', [MoneyTransitionController::class, 'create']);
     Route::patch('/money-transition/{moneyTransition}', [MoneyTransitionController::class, 'update']);
+    Route::get('/money-transition', [MoneyTransitionController::class, 'query']);
+    Route::get('/money-transition/summary', [MoneyTransitionController::class, 'summary']);
 });

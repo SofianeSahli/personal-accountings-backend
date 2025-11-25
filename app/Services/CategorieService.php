@@ -37,7 +37,7 @@ class CategorieService implements BaseService
         return $this->repo->findByPK($id);
     }
 
-    public function query($params = [])
+    public function query($params = [], $page = 0)
     {
         return $this->repo->query($params);
     }

@@ -13,18 +13,7 @@ class CategoriesController extends Controller
     public function get(): JsonResponse
     {
         $allCategories = $this->categorieService->all();
-        $incomes = $allCategories->filter(function ($element) {
-            return $element->is_income === 1;
-        });
-        $expenses = $allCategories->filter(function ($element) {
-            return $element->is_income === 0;
-        });
-        $collectionExpenses = CategorieResource::collection($expenses);
-        $collectionIncome = CategorieResource::collection($incomes);
 
-        return response()->json([
-            'incomes' => $collectionIncome,
-            'expenses' => $collectionExpenses,
-        ]);
+        return response()->json(CategorieResource::collection($allCategories));
     }
 }
