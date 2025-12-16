@@ -14,6 +14,9 @@ class MoneyTransition extends Model
         'description',
         'categorie_id',
         'user_id',
+        'date',
+        'occurence',
+        'recurrence_batch_id',
     ];
 
     public function categorie()

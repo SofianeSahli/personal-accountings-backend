@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\MoneyTransition;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -15,7 +16,7 @@ class MoneyTransitionRepository extends BaseRepository
     }
 
 
-    public function createRecurringTransaction(array $data): MoneyTransition
+    public function createRecurringTransaction(array $data): Collection
     {
         return DB::transaction(function () use ($data) {
             $startDate = Carbon::parse($data['start_date']);
@@ -58,7 +59,9 @@ class MoneyTransitionRepository extends BaseRepository
                 }
             }
             $this->model->insert($transactions);
-            return $transactions;
+            $insertedModels = $this->model->where('recurrence_batch_id', $batchId)->get();
+
+            return $insertedModels;
         });
     }
 
@@ -72,55 +75,35 @@ class MoneyTransitionRepository extends BaseRepository
             }
 
             switch ($field) {
-
                 case 'amount':
                     $query->where('amount', $value);
-
                     break;
-
                 case 'categorie_id':
                     $query->where('categorie_id', $value);
-
                     break;
-
                 case 'user_id':
                     $query->where('user_id', $value);
-
                     break;
-
                 case 'categorie.is_income':
                     $query->whereHas('categorie', fn ($q) => $q->where('is_income', $value));
-
                     break;
-
                 case 'categorie.parent_id':
                     $query->whereHas('categorie', fn ($q) => $q->where('parent_id', $value));
-
                     break;
-
-                case 'created_at':  // exact date
-                    $query->whereDate('created_at', $value);
-
+                case 'date':
+                    $query->whereDate('date', $value);
                     break;
-
                 case 'start_date':
-                    $query->whereDate('created_at', '>=', $value);
-
+                    $query->whereDate('date', '>=', $value);
                     break;
-
                 case 'end_date':
-                    $query->whereDate('created_at', '<=', $value);
-
+                    $query->whereDate('date', '<=', $value);
                     break;
-
                 case 'max_amount':
                     $query->where('amount', '<=', $value);
-
                     break;
-
                 case 'min_amount':
                     $query->where('amount', '>=', $value);
-
                     break;
                 case 'categorie.name':
                     $query->whereHas(
@@ -128,16 +111,21 @@ class MoneyTransitionRepository extends BaseRepository
                         fn ($q) => $q->where('name', 'like', '%'.$value.'%')
                     );
                     break;
+                case 'type':
+                    $query->whereHas(
+                        'categorie',
+                        fn ($q) => $q->where('is_income', $value)
+                    );
+                    break;
                 case 'categories':
                     $query->whereHas(
                         'categorie',
                         fn ($q) => $q->whereIn('parent_id', (array) $value)
                     );
-
                     break;
             }
         }
-        $query->orderBy('created_at', 'desc');
+        $query->orderBy('date', 'asc');
         if (!empty($page)) {
             return $query->paginate($page);
         }

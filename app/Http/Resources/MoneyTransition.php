@@ -21,6 +21,9 @@ class MoneyTransition extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'id' => $this->id,
+            'date' => $this->date,
+            'occurence' => $this->occurence,
+            'recurrence_batch_id' => $this->recurrence_batch_id,
         ];
     }
 }

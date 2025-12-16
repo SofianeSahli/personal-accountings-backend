@@ -20,8 +20,11 @@ class MoneyTransitionController extends Controller
     {
         $data = $request->validated();
         $moneyTransition = $this->moneyTransition->create($data);
-
-        return response()->json(new ResourcesMoneyTransition($moneyTransition), 201);
+        if ($moneyTransition instanceof \Illuminate\Database\Eloquent\Collection) {
+            return response()->json(ResourcesMoneyTransition::collection($moneyTransition), 201);
+        } else {
+            return response()->json(new ResourcesMoneyTransition($moneyTransition), 201);
+        }
     }
 
     public function update(MoneyTransitionRequest $request, MoneyTransition $moneyTransition): JsonResponse
@@ -45,6 +48,7 @@ class MoneyTransitionController extends Controller
             'start_date',
             'end_date',
             'max_amount',
+            'type',
             'min_amount',
         ]);
         $perPage = $request->query('per_page');

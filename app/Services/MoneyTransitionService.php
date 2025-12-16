@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\MoneyTransitionRepository;
+use Illuminate\Support\Collection;
 
 class MoneyTransitionService implements BaseService
 {
@@ -17,14 +18,12 @@ class MoneyTransitionService implements BaseService
     }
 
 
-    public function create(array $data)
+    public function create(array $data): Collection
     {
-        // For one-time transactions, create single record
         if ($data['occurence'] === 'one_time') {
-            return $this->repo->create($data);
+            return collect($this->repo->create($data));
         }
 
-        // For recurring transactions, handle in service method
         return $this->repo->createRecurringTransaction($data);
     }
 
@@ -76,7 +75,7 @@ class MoneyTransitionService implements BaseService
     {
         return $collection
             ->groupBy(function ($item) {
-                return \Carbon\Carbon::parse($item->created_at)->format('d-m-Y');
+                return \Carbon\Carbon::parse($item->date)->format('d-m-Y');
             })
             ->map(function ($dayGroup) {
                 return $dayGroup->sum('amount');

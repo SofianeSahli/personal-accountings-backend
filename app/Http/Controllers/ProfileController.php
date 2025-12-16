@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
-    public function __construct(private UserService $userService) {}
+    public function __construct(private UserService $userService)
+    {
+    }
 
     public function create(UserRequest $request): JsonResponse
     {
@@ -34,7 +36,11 @@ class ProfileController extends Controller
         $user = $this->userService->query(['auth_id' => $request->auth_id])->first();
 
         if (!$user) {
-            return response()->json(['errors.user_not_found'], 404);
+            return response()->json([
+             'message' => 'errors.user_not_found',
+            'status' => 404,
+            'code' => 'USER_NOT_FOUND'
+            ], 404);
         }
 
         return response()->json($user);
