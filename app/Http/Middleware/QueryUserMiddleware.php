@@ -27,7 +27,6 @@ class QueryUserMiddleware
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        // Inject user_id into request
         $request->merge(['user_id' => $user->id]);
 
         return $next($request);
