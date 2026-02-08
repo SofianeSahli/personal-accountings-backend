@@ -73,7 +73,7 @@ class MoneyTransitionController extends Controller
         $filters = $request->only([
         'user_id',
         'start_date',
-            'end_date',
+        'end_date',
         ]);
         $result =  $this->moneyTransition->summary($filters);
         return response()->json($result);
