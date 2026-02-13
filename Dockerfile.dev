@@ -1,49 +1,82 @@
-# Development
 FROM php:8.2-fpm
 
-# Install system dependencies
+# -------------------------------------------------
+# 1️⃣ Install system dependencies
+# -------------------------------------------------
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
     zip \
     unzip \
-    libpq-dev
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libwebp-dev \
+    libxpm-dev \
+    libzip-dev \
+    libicu-dev \
+    libonig-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# -------------------------------------------------
+# 2️⃣ Configure & install PHP extensions
+# -------------------------------------------------
+RUN docker-php-ext-configure gd \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    intl
 
-# Get latest Composer
+# -------------------------------------------------
+# 3️⃣ Install Composer
+# -------------------------------------------------
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Create system user to run Composer and Artisan Commands
-RUN useradd -G www-data,root -u 1000 -d /home/dev dev
-RUN mkdir -p /home/dev/.composer && \
-    chown -R dev:dev /home/dev
+ENV COMPOSER_MEMORY_LIMIT=-1
 
-# Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory
+# -------------------------------------------------
+# 4️⃣ Copy composer files first (better caching)
+# -------------------------------------------------
+COPY composer.json composer.lock ./
+
+# Install dependencies WITHOUT running Laravel scripts
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-progress \
+    --no-scripts
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+# -------------------------------------------------
+# 5️⃣ Copy full Laravel project
+# -------------------------------------------------
 COPY . .
 
-# Change ownership
-RUN chown -R dev:dev /var/www
+# Ensure .env exists (if not mounted)
+RUN cp .env.example .env || true
 
-USER dev
+# Run Laravel package discovery now that artisan exists
+RUN php artisan package:discover --ansi || true
 
-# Install dependencies
-RUN composer install
+# Fix permissions
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 storage bootstrap/cache
 
-# Generate key
-RUN php artisan key:generate
-
-# Expose port 9000
+# -------------------------------------------------
+# 6️⃣ Expose PHP-FPM
+# -------------------------------------------------
 EXPOSE 9000
 
 CMD ["php-fpm"]

@@ -22,10 +22,11 @@ class RedisAuthMiddleware
         }
 
         $token = substr($authorizationHeader, 7);
+Redis::set('my_key', 'my_value');
 
-        $authId = Redis::get("access:{$token}");
+        $authId = Redis::get("access:".$token);
         if (!$authId) {
-            return response()->json(['error' => 'Invalid or expired token'], 401);
+            return response()->json(['error' => "access:".$token], 401);
         }
         $request->merge(['auth_id' => $authId]);
         
