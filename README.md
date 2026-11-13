@@ -1,59 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Household Expenses — API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel API for a household expenses app. A household records its shared income, expenses and savings, and sees where the money goes.
 
-## About Laravel
+- **Client:** the Angular app `expenses-management`, later also packaged with Capacitor for Android and iOS.
+- **Status:** foundations only (spec 001). The API serves `GET /api/v1/health`; accounts, households and transactions arrive with specs 002–005.
+- **Working rules:** [CLAUDE.md](CLAUDE.md) holds the architecture, coding and security rules. Every feature starts as a spec in [specs/](specs/).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Piece | Version |
+|---|---|
+| PHP | 8.4.27 or newer (8.4 line) |
+| Laravel | 13 |
+| MySQL | 8.4 LTS, in every environment, tests included |
+| Auth | Laravel Sanctum (arrives with spec 002) |
+| Tests and checks | Pest, Pint, Larastan level 6 |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+There is no Redis: cache, queues, sessions and rate limits use Laravel's `database` drivers.
 
-## Learning Laravel
+## Getting started
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+You need Docker. PHP, Composer and Artisan run inside the app container, never on the host.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. Create your environment file:
 
-## Laravel Sponsors
+   ```bash
+   cp .env.example .env
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+2. Fill in the empty secrets in `.env`: `DB_PASSWORD` and `DB_ROOT_PASSWORD`. Any long random strings will do.
+3. Start the stack:
 
-### Premium Partners
+   ```bash
+   docker compose up -d --build
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+4. Generate the app key and create the tables:
+
+   ```bash
+   docker compose exec personal-accounting-backend php artisan key:generate
+   docker compose exec personal-accounting-backend php artisan migrate
+   ```
+
+5. Check that the API answers:
+
+   ```bash
+   curl http://localhost:8000/api/v1/health
+   # {"data":{"status":"ok"}}
+   ```
+
+MySQL creates the `expenses_db` and `expenses_test` databases and the `expenses` user the first time its volume is created. To start over from an empty database, run `docker compose down -v`, then `docker compose up -d --build`.
+
+### Local services
+
+All ports listen on `127.0.0.1` only. If a port is already taken on your machine, change it in `.env`.
+
+| Service | Default URL | `.env` key |
+|---|---|---|
+| API (nginx) | http://localhost:8000 | `APP_FORWARD_PORT` |
+| phpMyAdmin (local only) | http://localhost:8080 | `PMA_FORWARD_PORT` |
+| MySQL | `127.0.0.1:3306` | `DB_FORWARD_PORT` |
+
+## Everyday commands
+
+```bash
+docker compose exec personal-accounting-backend php artisan test --compact
+docker compose exec personal-accounting-backend php artisan test --compact --filter=<name>
+docker compose exec personal-accounting-backend vendor/bin/pint
+docker compose exec personal-accounting-backend vendor/bin/phpstan analyse
+docker compose exec personal-accounting-backend composer audit
+docker compose exec personal-accounting-backend php artisan route:list --path=api
+```
+
+Tests always run against MySQL `expenses_test`. The suite refuses to start on any database whose name doesn't end in `_test`.
+
+## Project layout
+
+```
+app/
+  Modules/<Module>/   one folder per business domain (Identity, Household, Ledger), added by specs
+  Shared/             cross-cutting code: errors, JSON-only middleware, request ids, Money, health
+  Providers/
+specs/                one folder per spec: requirements, design, tasks, API contract
+tests/Architecture/   rules that every class under app/ must follow
+```
+
+## API conventions
+
+- Every route lives under `/api/v1` and speaks JSON only. A request body that isn't a JSON object or array gets `415`.
+- Errors carry a stable code and never a message: `{"error": {"code": "request.not_found"}}`. Validation errors list codes per field: `{"error": {"code": "validation.failed", "fields": {"amount": ["amount.required"]}}}`.
+- Every response has an `X-Request-Id` header, which also appears in the logs.
+- Amounts are integers in the currency's minor unit (millimes for TND, cents for EUR), sent along with an ISO 4217 currency code.
+
+Each spec's `contract.md` lists its endpoints and error codes. The shared rules are in [specs/001-foundations/contract.md](specs/001-foundations/contract.md).
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- No feature code is written before its spec is approved. See the workflow in [CLAUDE.md](CLAUDE.md).
+- One feature or fix per branch, and one commit per pull request.
+- CI runs Pint, Larastan, `composer audit` and the tests on every pull request and every push to `main`. A red check blocks the merge.
