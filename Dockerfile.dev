@@ -1,82 +1,30 @@
-FROM php:8.2-fpm
+FROM php:8.4.27-fpm-alpine
 
-# -------------------------------------------------
-# 1️⃣ Install system dependencies
-# -------------------------------------------------
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    zip \
-    unzip \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    libwebp-dev \
-    libxpm-dev \
-    libzip-dev \
-    libicu-dev \
-    libonig-dev \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2.11.2 /usr/bin/composer /usr/bin/composer
+COPY --from=mlocati/php-extension-installer:2.13.2 /usr/bin/install-php-extensions /usr/local/bin/
 
-# -------------------------------------------------
-# 2️⃣ Configure & install PHP extensions
-# -------------------------------------------------
-RUN docker-php-ext-configure gd \
-    --with-freetype \
-    --with-jpeg \
-    --with-webp
+RUN install-php-extensions intl opcache pcntl pdo_mysql zip
 
-RUN docker-php-ext-install \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip \
-    intl
-
-# -------------------------------------------------
-# 3️⃣ Install Composer
-# -------------------------------------------------
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY docker/php/app.ini /usr/local/etc/php/conf.d/zz-app.ini
 
 ENV COMPOSER_MEMORY_LIMIT=-1
 
 WORKDIR /var/www
 
-# -------------------------------------------------
-# 4️⃣ Copy composer files first (better caching)
-# -------------------------------------------------
 COPY composer.json composer.lock ./
 
-# Install dependencies WITHOUT running Laravel scripts
 RUN composer install \
-    --no-dev \
-    --optimize-autoloader \
     --no-interaction \
     --no-progress \
-    --no-scripts
-RUN pecl install redis \
-    && docker-php-ext-enable redis
-# -------------------------------------------------
-# 5️⃣ Copy full Laravel project
-# -------------------------------------------------
+    --no-scripts \
+    --no-autoloader
+
 COPY . .
 
-# Ensure .env exists (if not mounted)
-RUN cp .env.example .env || true
-
-# Run Laravel package discovery now that artisan exists
-RUN php artisan package:discover --ansi || true
-
-# Fix permissions
-RUN chown -R www-data:www-data /var/www \
+RUN composer dump-autoload --optimize \
+    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# -------------------------------------------------
-# 6️⃣ Expose PHP-FPM
-# -------------------------------------------------
 EXPOSE 9000
 
 CMD ["php-fpm"]
