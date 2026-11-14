@@ -3,7 +3,7 @@
 Laravel API for a household expenses app. A household records its shared income, expenses and savings, and sees where the money goes.
 
 - **Client:** the Angular app `expenses-management`, later also packaged with Capacitor for Android and iOS.
-- **Status:** foundations only (spec 001). The API serves `GET /api/v1/health`; accounts, households and transactions arrive with specs 002–005.
+- **Status:** spec 001 (foundations) is merged. Spec 002 (accounts) is in progress: sign-up, sign-in, password reset, Google and two-step sign-in. Households and transactions arrive with specs 003–005.
 - **Working rules:** [CLAUDE.md](CLAUDE.md) holds the architecture, coding and security rules. Every feature starts as a spec in [specs/](specs/).
 
 ## Stack
@@ -13,7 +13,7 @@ Laravel API for a household expenses app. A household records its shared income,
 | PHP | 8.4.27 or newer (8.4 line) |
 | Laravel | 13 |
 | MySQL | 8.4 LTS, in every environment, tests included |
-| Auth | Laravel Sanctum (arrives with spec 002) |
+| Auth | Laravel Sanctum: cookie session for the web app, one token per device for mobile |
 | Tests and checks | Pest, Pint, Larastan level 6 |
 
 There is no Redis: cache, queues, sessions and rate limits use Laravel's `database` drivers.
@@ -61,6 +61,22 @@ All ports listen on `127.0.0.1` only. If a port is already taken on your machine
 | phpMyAdmin (local only) | http://localhost:8080 | `PMA_FORWARD_PORT` |
 | MySQL | `127.0.0.1:3306` | `DB_FORWARD_PORT` |
 
+The `queue` service runs `php artisan queue:work` and sends the code emails. Locally, mail goes to the log (`MAIL_MAILER=log`).
+
+### Authentication settings
+
+| `.env` key | What it does |
+|---|---|
+| `SANCTUM_STATEFUL_DOMAINS` | Web app domains that get a cookie session (e.g. `localhost:4200`). List only web domains: a mobile app's origin here would be treated as a browser. |
+| `CORS_ALLOWED_ORIGINS` | Origins allowed to call the API with credentials (e.g. `http://localhost:4200`). |
+| `SESSION_SECURE_COOKIE` | `true` everywhere except local http, where it must be `false`. |
+| `SANCTUM_TOKEN_EXPIRATION` | Mobile token lifetime in minutes (default 90 days). |
+| `TERMS_VERSION` | Terms version a new account must accept. |
+| `GOOGLE_CLIENT_IDS` | Comma-separated Google OAuth client ids accepted for Google sign-in. |
+| `AUTH_TEST_MODE` | `true` makes every emailed code `000000` and accepts Google tokens `test:<email>`. Ignored in production. |
+
+A web client calls `GET /sanctum/csrf-cookie`, then signs in. A mobile client sends a `device_id` (a UUID per install) when it signs in and gets a token. Endpoints are listed in [specs/002-accounts/contract.md](specs/002-accounts/contract.md).
+
 ## Everyday commands
 
 ```bash
@@ -78,7 +94,7 @@ Tests always run against MySQL `expenses_test`. The suite refuses to start on an
 
 ```
 app/
-  Modules/<Module>/   one folder per business domain (Identity, Household, Ledger), added by specs
+  Modules/<Module>/   one folder per business domain, added by specs (Identity today; Household, Ledger later)
   Shared/             cross-cutting code: errors, JSON-only middleware, request ids, Money, health
   Providers/
 specs/                one folder per spec: requirements, design, tasks, API contract
