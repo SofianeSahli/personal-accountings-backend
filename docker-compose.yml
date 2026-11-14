@@ -15,6 +15,22 @@ services:
     networks:
       - personal-accounting-backend-network
 
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /var/www
+    command: ["php", "artisan", "queue:work", "--tries=3"]
+    volumes:
+      - .:/var/www
+      - vendor_data:/var/www/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - personal-accounting-backend-network
+
   nginx:
     image: nginx:1.30.6-alpine
     restart: unless-stopped
