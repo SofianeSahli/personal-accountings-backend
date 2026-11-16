@@ -20,7 +20,7 @@ final class SourceFiles
      * @param  list<string>  $excluded  path prefixes, relative to the project root
      * @return array<string, string> relative path => contents
      */
-    public static function read(array $paths, string $extensionPattern = '/\.php$/', array $excluded = []): array
+    public static function read(array $paths, string $extensionPattern = '/(?<!\.blade)\.php$/', array $excluded = []): array
     {
         $files = [];
 

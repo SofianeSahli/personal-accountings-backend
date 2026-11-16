@@ -63,6 +63,7 @@ Response `422` (example)
 | 404 | `request.not_found` | Unknown path (including the removed prototype paths, e.g. `/api/v1/categories`, `/api/v1/money-transition`, `/api/v1/profile`) or missing model |
 | 405 | `request.method_not_allowed` | Path exists, method doesn't |
 | 415 | `request.not_json` | See *Request bodies* |
+| 419 | `auth.csrf_mismatch` | Web (cookie) request with a missing or wrong CSRF token (added by spec 002) |
 | 422 | `validation.failed` | With `fields` |
 | 429 | `request.throttled` | With `retry_after_seconds` and `Retry-After` |
 | 500 | `server.error` | Unexpected failure; no details unless `APP_DEBUG=true` |

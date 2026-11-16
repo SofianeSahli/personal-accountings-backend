@@ -28,8 +28,8 @@ This spec builds that ground and deletes the prototype. It adds no user-facing f
 | Redis | Removed entirely. Cache, queue, sessions and rate limits use Laravel's `database` drivers. |
 | UUID storage | `CHAR(36)` (`ascii`). |
 | Legacy code | The architecture rules, Pint and Larastan apply to **all** code. Legacy code is **deleted** in this spec rather than refactored; specs 002–005 rebuild its features properly. This includes the legacy `users`/`sessions` migration; Identity (spec 002) recreates both. |
-| Error classes and `RequireJson` | Built in this project's `app/Shared`, adapted from Shop Keeper's reference. No shared package dependency. |
-| Error envelope | Shop Keeper's: `{"error": {"code": …, "fields": …}}`, with per-field **codes** (`amount.required`), never messages. |
+| Error classes and `RequireJson` | Built in this project's `app/Shared`. No shared package dependency. |
+| Error envelope | `{"error": {"code": …, "fields": …}}`, with per-field **codes** (`amount.required`), never messages. |
 | 500 body | Generic in production. Exception details are added only when `APP_DEBUG=true`. |
 | Currencies | Every ISO 4217 currency ICU knows, exponent taken from `ext-intl`. |
 | Health | `GET /api/v1/health` checks the database and is throttled on the `file` cache store. Laravel's `/up` is removed. |
@@ -146,7 +146,7 @@ This spec builds that ground and deletes the prototype. It adds no user-facing f
 
 ### US-6 — Error format (`ApiException` + renderer)
 
-- **REQ-6.1** THE SYSTEM SHALL provide `ApiException` and a JSON error renderer in `app/Shared`, adapted from Shop Keeper's reference without depending on it.
+- **REQ-6.1** THE SYSTEM SHALL provide `ApiException` and a JSON error renderer in `app/Shared`.
   - `ApiException` carries a stable machine code (`<domain>.<reason>`, lowercase snake segments) and an HTTP status.
 - **REQ-6.2** WHEN any exception reaches the renderer for a request under `/api/`, THE SYSTEM SHALL respond with the envelope `{"error": {"code": "<code>", …}}`.
   - The body holds no user-facing message.

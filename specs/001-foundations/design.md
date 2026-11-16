@@ -13,7 +13,7 @@ Spec 001 is plumbing plus a clean-out, in five parts:
 4. **`app/Shared`:** gets the API foundations: errors, `RequireJson`, request id, `Money`, and health.
 5. **Clean-out:** every legacy file is deleted, and CI runs the whole gate on every PR.
 
-Versions are taken from what Shop Keeper already runs in production-like use, so they are known to work together:
+Versions are pinned to releases known to work together:
 
 - `php:8.4.27-fpm-alpine`
 - `composer:2.11.1`
@@ -210,13 +210,13 @@ The renderer builds `fields` from `$exception->validator->failed()`, never from 
 
 ### `RequireJson` (REQ-7.2–7.5)
 
-This is a port of Shop Keeper's middleware, with one change.
+`RequireJson` decides as follows.
 
 - **Has a body:** non-empty raw content, any form field, or any file.
 - **Accepted only when:**
   - `$request->isJson()` (`application/json` or `+json`);
   - `json_validate()` passes;
-  - the decoded top-level value is an array or object (REQ-7.5, the change).
+  - the decoded top-level value is an array or object (REQ-7.5).
 - **Otherwise:** `throw new ApiException('request.not_json', 415)`.
 - Requests without a body pass through (REQ-7.3).
 
@@ -430,7 +430,7 @@ None. The only route is public by design (REQ-9.1). Policies start with spec 003
 - **`/sanctum/csrf-cookie`** starts a session, and the `sessions` table is gone until spec 002, so that route errors until then. No client calls it before spec 002.
 - **Other `HttpException` statuses** (e.g. `abort(400)`) map to 500 `server.error`, as REQ-6.4 says. Code must throw `ApiException` with an explicit code instead of calling `abort()`.
 - **The `file` limiter is per server.** With several app servers each enforces its own limit, which is acceptable for a health probe and noted for the hosting decision.
-- **Alpine instead of Debian** for the PHP image: smaller, and the same base as Shop Keeper. The only extensions needed are available through `install-php-extensions`. A Debian base is the fallback if an extension misbehaves.
+- **Alpine instead of Debian** for the PHP image: smaller. The only extensions needed are available through `install-php-extensions`. A Debian base is the fallback if an extension misbehaves.
 - **Final Eloquent models:** `final_class` and REQ-5.9 make models final. Laravel supports this. If spec 002 needs Identity's `User` to be extendable, that spec allows the exception explicitly.
 - **Pest arch limits:** if `not->toHavePublicMethodsBesides` or the dependency listing doesn't behave as expected in Pest 5, the affected rule falls back to a reflection-based test in the same file. The REQ stays the same.
 - **Considered:** a separate `System` module for health. Rejected: no table, no domain, and CLAUDE.md forbids speculative modules.

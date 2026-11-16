@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
+        $middleware->statefulApi();
         $middleware->api(append: [RequireJson::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -1,6 +1,6 @@
 # 001 — Foundations: Tasks
 
-> Status: Done (2026-11-13), pending owner review
+> Status: Done (2026-11-13). Approved by the owner and merged in PR #1; CI passed.
 > Design: [design.md](./design.md) · Requirements: [requirements.md](./requirements.md) · Contract: [contract.md](./contract.md)
 
 This spec has no migrations, models or policies. Its order is **runtime → legacy clean-out → upgrade → tooling → `Shared` → CI**:
@@ -181,7 +181,7 @@ All of these were made during implementation on 2026-11-13 and are **awaiting ow
 |---|---|---|---|
 | D1 | `docker/mysql/init/01-test-database.sh`, bind-mounted into `/docker-entrypoint-initdb.d` | An inline Compose `configs:` entry (`mysql-test-database`) that is copied into the container as `01-test-database.sql` | Docker Desktop refused the bind mount of that folder. Inline config needs no file sharing, no shell script, and no exec bit or CRLF concerns. Same effect: creates `${DB_TEST_DATABASE}` on a new volume and grants on it only. |
 | D2 | Grant `ALL PRIVILEGES ON \`${DB_TEST_DATABASE}\`.*` | The grant escapes `_` and `%` (`expenses\_test`) through a prepared statement | `_` is a wildcard in MySQL grants. The unescaped grant also matched databases like `expensesXtest`. The official image escapes `MYSQL_DATABASE` the same way. |
-| D3 | Only `DB_FORWARD_PORT` is configurable | `APP_FORWARD_PORT` and `PMA_FORWARD_PORT` too, and nginx is bound to `127.0.0.1` as well | Shop Keeper already uses host ports 8000/8080 on this machine. The defaults stay 8000/8080; the local `.env` uses 8001/8081. |
+| D3 | Only `DB_FORWARD_PORT` is configurable | `APP_FORWARD_PORT` and `PMA_FORWARD_PORT` too, and nginx is bound to `127.0.0.1` as well | Another local project already uses host ports 8000/8080 on this machine. The defaults stay 8000/8080; the local `.env` uses 8001/8081. |
 | D4 | — | `.dockerignore` added (`.git`, `.env*` except the example, `vendor`, `node_modules`, caches) | Keeps secrets out of the image (REQ-11.3's intent) and stops the host `vendor/` overwriting the one installed in the image. |
 | D5 | — | Images pinned beyond the design list: `nginx:1.30.6-alpine`, `phpmyadmin:5.2.2`, `mlocati/php-extension-installer:2.13.2`. Generic `container_name`s (`mysql`, `phpmyadmin`) removed. | Reproducible builds, and no name clash with other projects' containers. |
 | D6 | Composer `audit` script | No script; `composer audit` is the built-in command | Composer refuses a script that shadows a built-in command. REQ-4.7 is met by the built-in. |
