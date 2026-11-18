@@ -1,0 +1,588 @@
+{
+  "info": {
+    "name": "Household Expenses API",
+    "description": "Every route of the API under `/api/v1`, for manual testing.\n\n1. Import this collection and `local.postman_environment.json`, then select the **Household Expenses — local** environment.\n2. Set `AUTH_TEST_MODE=true` in `.env` so every emailed code is `000000` and Google accepts `test:<email>`. Otherwise read the code in `storage/logs/laravel.log`.\n3. Requests run in mobile (token) mode: they send `device_id`, and the collection script stores `token` and `pending_sign_in` from the answers.\n\nErrors look like `{\"error\": {\"code\": \"...\"}}`. Full contracts: `specs/<NNN>-<feature>/contract.md`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "let body;",
+          "try { body = pm.response.json(); } catch (e) { return; }",
+          "const data = body && body.data;",
+          "if (!data) { return; }",
+          "if (data.token) { pm.environment.set('token', data.token); }",
+          "if (data.pending_sign_in) { pm.environment.set('pending_sign_in', data.pending_sign_in); }",
+          "if (data.status === 'signed_in') { pm.environment.unset('pending_sign_in'); }"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Foundations (spec 001)",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Checks that the API answers. Returns `200 {\"data\": {\"status\": \"ok\"}}`.\n\n**Auth:** none  \n**Throttle:** 60/min\n\n**Errors:** `429 request.throttled`",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Accounts (spec 002)",
+      "description": "Sign-up, sign-in, password reset, Google and two-step sign-in. Contract: `specs/002-accounts/contract.md`.",
+      "item": [
+        {
+          "name": "Email sign-up",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "register"
+                  ]
+                },
+                "description": "Creates an unconfirmed account and emails a 6-digit code (valid 15 min). Returns `202`, no body. `phone` and `locale` are optional.\n\n**Auth:** none  \n**Throttle:** email routes\n\n**Errors:** `409 email.taken`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"terms_version\": \"{{terms_version}}\",\n  \"phone\": \"+216 20 123 456\",\n  \"locale\": \"{{locale}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            },
+            {
+              "name": "Resend code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/resend",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "resend"
+                  ]
+                },
+                "description": "Emails a new sign-up code if the account is unconfirmed. Returns `202` for any address.\n\n**Auth:** none  \n**Throttle:** email routes\n\n**Errors:** `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            },
+            {
+              "name": "Confirm email",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/confirm",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "confirm"
+                  ]
+                },
+                "description": "Confirms the address with the emailed code and signs in. Returns a Session with a `token`.\n\n**Auth:** none  \n**Throttle:** sign-in routes\n\n**Errors:** `422 code.invalid`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{code}}\",\n  \"device_id\": \"{{device_id}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Password sign-in",
+          "item": [
+            {
+              "name": "Sign in",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "login"
+                  ]
+                },
+                "description": "Signs in with email and password. Returns `signed_in` with a `token`, or `code_required` with a `pending_sign_in` when two-step sign-in is on (then call **Two-step sign-in / Confirm code**).\n\n**Auth:** none  \n**Throttle:** sign-in routes\n\n**Errors:** `401 auth.invalid_credentials`, `403 auth.email_unconfirmed`, `429 auth.password_locked`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_id\": \"{{device_id}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Password reset",
+          "item": [
+            {
+              "name": "Forgot password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/forgot",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "forgot"
+                  ]
+                },
+                "description": "Emails a reset code to a confirmed account. Returns `202` for any address.\n\n**Auth:** none  \n**Throttle:** email routes\n\n**Errors:** `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            },
+            {
+              "name": "Reset password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/reset",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "reset"
+                  ]
+                },
+                "description": "Sets `new_password` with the emailed code. Returns `204` and ends every token and web session of the account. Copy `new_password` into `password` before signing in again.\n\n**Auth:** none  \n**Throttle:** sign-in routes\n\n**Errors:** `422 code.invalid`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{code}}\",\n  \"password\": \"{{new_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google",
+          "item": [
+            {
+              "name": "Sign in with Google",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/google",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "google"
+                  ]
+                },
+                "description": "Signs in, or signs up on first use, with a Google ID token. With `AUTH_TEST_MODE=true`, `test:<email>` is accepted. `terms_version` is needed only on the first sign-in; `phone` and `locale` are used only then.\n\n**Auth:** none  \n**Throttle:** sign-in routes\n\n**Errors:** `401 auth.google_invalid`, `503 auth.google_unavailable`, `409 auth.google_email_conflict`, `422 auth.terms_required`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_token\": \"{{google_id_token}}\",\n  \"device_id\": \"{{device_id}}\",\n  \"terms_version\": \"{{terms_version}}\",\n  \"phone\": null,\n  \"locale\": \"{{locale}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Two-step sign-in",
+          "item": [
+            {
+              "name": "Confirm code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/two-factor",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "two-factor"
+                  ]
+                },
+                "description": "Finishes a sign-in that answered `code_required`, with `pending_sign_in` (stored automatically) and the emailed code. Returns a Session. The 5th wrong code ends the sign-in; it expires after 10 min.\n\n**Auth:** none  \n**Throttle:** sign-in routes\n\n**Errors:** `422 code.invalid`, `401 auth.pending_invalid`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pending_sign_in\": \"{{pending_sign_in}}\",\n  \"code\": \"{{code}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            },
+            {
+              "name": "Resend code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/two-factor/resend",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "two-factor",
+                    "resend"
+                  ]
+                },
+                "description": "Emails a new two-step code; the 10 minutes and the try count restart. Returns `202`.\n\n**Auth:** none  \n**Throttle:** email routes\n\n**Errors:** `401 auth.pending_invalid`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pending_sign_in\": \"{{pending_sign_in}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "My account",
+          "item": [
+            {
+              "name": "Show my account",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "me"
+                  ]
+                },
+                "description": "Returns the signed-in account.\n\n**Auth:** Bearer `{{token}}`  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`"
+              }
+            },
+            {
+              "name": "Turn on two-step sign-in",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/me/two-factor",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "me",
+                    "two-factor"
+                  ]
+                },
+                "description": "Turns two-step sign-in on. Returns `204`; open sessions keep working.\n\n**Auth:** Bearer `{{token}}`  \n**Throttle:** none\n\n**Errors:** `409 two_factor.already_enabled`, `401 auth.unauthenticated`"
+              }
+            },
+            {
+              "name": "Send disable code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/me/two-factor/disable-code",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "me",
+                    "two-factor",
+                    "disable-code"
+                  ]
+                },
+                "description": "Emails the code needed to turn two-step sign-in off. Returns `202`.\n\n**Auth:** Bearer `{{token}}`  \n**Throttle:** email routes\n\n**Errors:** `409 two_factor.not_enabled`, `401 auth.unauthenticated`"
+              }
+            },
+            {
+              "name": "Turn off two-step sign-in",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/me/two-factor",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "me",
+                    "two-factor"
+                  ]
+                },
+                "description": "Turns two-step sign-in off with the emailed disable code. Returns `204`.\n\n**Auth:** Bearer `{{token}}`  \n**Throttle:** none\n\n**Errors:** `409 two_factor.not_enabled`, `422 code.invalid`, `401 auth.unauthenticated`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{code}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sign out",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/logout",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "description": "Ends the current token only. Returns `204`. The stored `token` stops working.\n\n**Auth:** Bearer `{{token}}`  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

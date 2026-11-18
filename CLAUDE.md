@@ -15,7 +15,7 @@ Laravel API for a household expenses app. A household (first the owner and his w
 - Spec 001 (Foundations) deleted the first prototype (`app/Http`, `app/Models`, `app/Repositories`, `app/Services`, `app/Pagination`, its migrations, seeders and factories). Never restore it from git or copy its patterns.
   - Prototype features (profile, categories, money transitions) are rebuilt from scratch by specs 002–005.
 - `app/` holds only `Modules`, `Shared` and `Providers`, and every rule below (architecture, Pint, Larastan) applies to all code with no exception.
-- The API serves only `GET /api/v1/health` until spec 002. There is no `users` or `sessions` table yet, so `/sanctum/csrf-cookie` fails until Identity exists.
+- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout). Households and transactions come with specs 003–005.
 - There is no data to keep.
 
 ## Stack
@@ -24,7 +24,7 @@ Laravel API for a household expenses app. A household (first the owner and his w
 - **Data:** MySQL 8.4 LTS in every environment, tests and CI included (database `expenses_test`).
   - The app connects as a dedicated user, never `root`.
   - Strict `sql_mode`, `utf8mb4` and a UTC session time zone.
-- **No Redis.** Cache, rate limits, queues and sessions use Laravel's `database` drivers (`cache`, `jobs` tables; `sessions` comes with Identity). Add Redis only when a spec shows a measured need. Never re-add redis, memcached, dynamodb or sqs config blocks.
+- **No Redis.** Cache, rate limits, queues and sessions use Laravel's `database` drivers (`cache`, `jobs` tables; `sessions` is owned by Identity). Add Redis only when a spec shows a measured need. Never re-add redis, memcached, dynamodb or sqs config blocks.
   - Production may share one MySQL server with other apps on the same VPS. This app gets its own database and its own MySQL user, with rights on that database only.
   - Keep Laravel's MySQL `strict` mode on.
   - MySQL cannot roll back schema changes, so a failed migration leaves a half-changed schema: keep one schema change per migration.
@@ -95,7 +95,7 @@ specs/
    4. Tick the task (`- [x]`) and note any deviation.
    - If the spec turns out wrong or incomplete, stop, update it, and get approval. Code and spec never diverge silently.
 
-**Commits:** commit only when the owner asks. Use one feature or fix per branch. Messages reference the spec, e.g. `feat(ledger): record a transaction [spec 004, REQ-2.1]`.
+**Commits:** commit only when the owner asks. Use one feature or fix per branch. Messages reference the spec, e.g. `feat(ledger): record a transaction [spec 004, REQ-2.1]`. Never write "Generated with Claude Code" (or any variant of it) in a commit message or a pull request description, and never add a `Co-Authored-By: Claude` trailer.
 
 ---
 
@@ -105,7 +105,7 @@ Code is split by business domain under `app/Modules/<Module>/`. Cross-cutting co
 
 | Module | Owns (tables) | May depend on |
 |---|---|---|
-| `Identity` | users, personal_access_tokens, sessions, email_codes, password reset codes | `Shared` only |
+| `Identity` | users, personal_access_tokens, sessions, email_codes (sign-up, reset and two-step removal codes), pending_sign_ins | `Shared` only |
 | `Household` | households, household_user (role), household_invitations | `Identity`, `Shared` |
 | `Ledger` | categories, transactions, recurring_rules; also the summaries | `Household`, `Identity`, `Shared` |
 
@@ -199,28 +199,35 @@ app/Shared/                CurrentHousehold, Money, ApiException + error rendere
   - Validation errors: `{"error": {"code": "validation.failed", "fields": {"amount": ["amount.required"]}}}`. Field entries are codes (`<field>.<rule>`), never messages.
   - Custom validation rules are named classes (`InternationalPhone` gives `phone.international_phone`), never closures, which would all give `closure_validation_rule`.
   - Throw `ApiException` with an explicit code, never `abort()`: any HTTP status the renderer does not map becomes `500 server.error`.
-  - Built in `app/Shared`, adapted from Shop Keeper's reference; never depend on Shop Keeper.
+  - Built in `app/Shared` (`ApiException`, `ApiErrorRenderer`, `ValidationCodes`).
   - Every response carries an `X-Request-Id` header. 500 bodies add exception details only when `APP_DEBUG=true`.
   - The frontend translates codes (French first, English later).
 - **Contract changes:** any change to an endpoint's request or response is a contract change. Update the spec's `contract.md` and the tests in the same change.
+- **Postman:** `postman/` holds `household-expenses.postman_collection.json` and `local.postman_environment.json`. The owner uses them for manual testing; you don't need to run them.
+  - Any change that adds, changes or removes a route updates the collection in the same change. Each route gets one request in its spec's folder, with an example body and a description: what it does, auth, throttle and its error codes.
+  - Request bodies use environment variables (`{{email}}`, `{{device_id}}`, …), never hard-coded values. A new variable goes into the environment file with a safe local value and a description; secrets stay empty.
+  - Tokens and ids returned by the API (`token`, `pending_sign_in`, …) are stored by the collection's test script, so requests can be chained without copy-paste.
 
 ## Authentication (Identity module)
 
-Sanctum in two modes. Both use the same user and the same actions.
+Sanctum in two modes on the **same paths** (`/api/v1/auth/...`). Both use the same user and the same actions; `SignInMode` picks the mode per request. Spec 002 and its `contract.md` hold the details.
 
 - **Web (Angular SPA): cookie session.**
-  - Flow: `GET /sanctum/csrf-cookie`, then `POST /api/v1/auth/login`.
-  - `SANCTUM_STATEFUL_DOMAINS` and `SESSION_DOMAIN` are set to the shared parent domain.
-  - Cookies are `Secure`, `HttpOnly` and `SameSite=Lax`.
+  - A request from a domain in `SANCTUM_STATEFUL_DOMAINS` gets a session. Flow: `GET /sanctum/csrf-cookie`, then for example `POST /api/v1/auth/email/login` with `X-XSRF-TOKEN`.
+  - `SANCTUM_STATEFUL_DOMAINS` lists **only web app domains**. A Capacitor origin (`https://localhost`, `capacitor://localhost`) listed there would make the mobile app a browser.
+  - `SESSION_DOMAIN` is set to the shared parent domain.
+  - Cookies are `Secure`, `HttpOnly` and `SameSite=Lax`. The session id is regenerated at sign-in.
   - CORS allows only the configured frontend origins, with credentials.
 - **Mobile (Capacitor): per-device personal access token.**
-  - Flow: `POST /api/v1/auth/token` with a client-generated `device_id`.
+  - Any other request must send a client-generated `device_id` (UUID) and gets a token.
   - One token per device, replaced on a new sign-in.
-  - Tokens expire, and are revoked on logout and on password change.
+  - Tokens expire after `SANCTUM_TOKEN_EXPIRATION` minutes (90 days), and are revoked on logout and on password reset.
 - **Accounts:**
   - Sign-up by email and password with a 6-digit emailed code; password reset by emailed code.
-  - Google sign-in and two-step sign-in may come later, each by its own spec.
-  - `C:\shop-keeper\shop-keeper-backend\app\Modules\Identity` is a reference implementation of these flows. Port and adapt what a spec needs; never depend on it.
+  - Google sign-in (ID token verified against `GOOGLE_CLIENT_IDS`).
+  - Two-step sign-in by emailed code, turned on and off by the user.
+  - Code emails are queued, encrypted on the queue, and written in the account's locale (`fr`, `en`).
+  - `AUTH_TEST_MODE=true` (never in production) makes every code `000000` and accepts Google tokens `test:<email>`.
 - **Safeguards:**
   - Sign-in, sign-up, reset and email-sending routes are rate limited.
   - Messages are generic, so it never reveals whether an account exists.

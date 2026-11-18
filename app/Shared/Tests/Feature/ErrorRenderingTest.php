@@ -9,6 +9,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -32,6 +33,7 @@ beforeEach(function (): void {
         Route::get('throttled', fn () => throw new ThrottleRequestsException(headers: ['Retry-After' => 42]));
         Route::get('maintenance', fn () => throw new HttpException(503));
         Route::get('bad-request', fn () => throw new HttpException(400));
+        Route::get('csrf-mismatch', fn () => throw new TokenMismatchException);
         Route::get('crash', fn () => throw new RuntimeException('secret SELECT * FROM users in /var/www/app/Secret.php'));
     });
 });
@@ -66,6 +68,7 @@ it('REQ-6.4 maps framework exceptions to stable codes', function (string $method
     'missing model' => ['GET', '/api/v1/_probe/missing-model', 404, 'request.not_found'],
     'unknown route' => ['GET', '/api/v1/_probe/nowhere', 404, 'request.not_found'],
     'method not allowed' => ['POST', '/api/v1/_probe/get-only', 405, 'request.method_not_allowed'],
+    'csrf mismatch' => ['GET', '/api/v1/_probe/csrf-mismatch', 419, 'auth.csrf_mismatch'],
     'maintenance' => ['GET', '/api/v1/_probe/maintenance', 503, 'server.unavailable'],
     'other http status' => ['GET', '/api/v1/_probe/bad-request', 500, 'server.error'],
 ]);

@@ -27,6 +27,8 @@ final class ApiErrorRenderer
 
     private const TRACE_FRAME_LIMIT = 50;
 
+    private const CSRF_MISMATCH_STATUS = 419;
+
     public function __invoke(Throwable $exception, Request $request): ?JsonResponse
     {
         if (! $request->is(self::API_PATHS)) {
@@ -64,6 +66,11 @@ final class ApiErrorRenderer
                 headers: $this->headersOf($exception),
             ),
             $exception instanceof TooManyRequestsHttpException => $this->throttled($exception),
+            $exception instanceof HttpExceptionInterface
+                && $exception->getStatusCode() === self::CSRF_MISMATCH_STATUS => new ApiException(
+                    'auth.csrf_mismatch',
+                    self::CSRF_MISMATCH_STATUS,
+                ),
             $exception instanceof HttpExceptionInterface
                 && $exception->getStatusCode() === Response::HTTP_SERVICE_UNAVAILABLE => new ApiException(
                     'server.unavailable',
