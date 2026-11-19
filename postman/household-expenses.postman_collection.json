@@ -583,6 +583,399 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Books and households (spec 003)",
+      "description": "Households, members and books. Contract: `specs/003-households/contract.md`.",
+      "item": [
+        {
+          "name": "Households",
+          "item": [
+            {
+              "name": "List my households",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households"
+                  ]
+                },
+                "description": "Your household as a one-item list, or an empty list. Cursor pagination (`?cursor=`).\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`"
+              }
+            },
+            {
+              "name": "Create a household",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households"
+                  ]
+                },
+                "description": "Creates a household with you as `owner`. It has no book: create one with **Books / Create the household book**. Stores `household_id`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** creations (10 per minute per account, shared with books)\n\n**Errors:** `401 auth.unauthenticated`, `422 household.limit_reached`, `422 validation.failed`, `429 request.throttled`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{household_name}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "if (pm.response.code === 201 && body.data && body.data.id) { pm.environment.set('household_id', body.data.id); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show a household",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}"
+                  ]
+                },
+                "description": "Your household, with your role.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`"
+              }
+            },
+            {
+              "name": "Rename a household",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}"
+                  ]
+                },
+                "description": "Owner only. An empty body changes nothing.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `403 household.forbidden`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{household_name}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete a household",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}"
+                  ]
+                },
+                "description": "Owner only. Every member leaves it and its book is deleted too (soft delete). Returns `204`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `403 household.forbidden`"
+              }
+            },
+            {
+              "name": "List members",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "members"
+                  ]
+                },
+                "description": "Members with account id, name and role: owners first, then by date joined. Cursor pagination.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books",
+          "item": [
+            {
+              "name": "List my books",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/books",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "books"
+                  ]
+                },
+                "description": "Your personal books and your household's book, oldest first, with `can_manage`. Cursor pagination.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`"
+              }
+            },
+            {
+              "name": "Create a personal book",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/books",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "books"
+                  ]
+                },
+                "description": "Creates a personal book (at most 5). `currency` defaults to TND and can never change; `timezone` defaults to Africa/Tunis. Stores `book_id`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** creations (10 per minute per account, shared with households)\n\n**Errors:** `401 auth.unauthenticated`, `422 validation.failed`, `422 book.limit_reached`, `429 request.throttled`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{book_name}}\",\n  \"currency\": \"{{currency}}\",\n  \"timezone\": \"{{timezone}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "if (pm.response.code === 201 && body.data && body.data.id) { pm.environment.set('book_id', body.data.id); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Create the household book",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/books",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "books"
+                  ]
+                },
+                "description": "Owner only: creates the one book of the household in `household_id`. Stores `book_id`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** creations (10 per minute per account, shared with households)\n\n**Errors:** `401 auth.unauthenticated`, `422 validation.failed` (incl. `household_id.not_found`), `403 household.forbidden`, `422 book.household_has_book`, `429 request.throttled`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{book_name}}\",\n  \"currency\": \"{{currency}}\",\n  \"timezone\": \"{{timezone}}\",\n  \"household_id\": \"{{household_id}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "if (pm.response.code === 201 && body.data && body.data.id) { pm.environment.set('book_id', body.data.id); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show a book",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/books/{{book_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "books",
+                    "{{book_id}}"
+                  ]
+                },
+                "description": "A book you can reach: yours, or your household's.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`"
+              }
+            },
+            {
+              "name": "Update a book",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/books/{{book_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "books",
+                    "{{book_id}}"
+                  ]
+                },
+                "description": "Renames the book and/or changes its timezone, when `can_manage` is true. `currency` and `household_id` are refused.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `403 book.forbidden`, `422 validation.failed`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{book_name}}\",\n  \"timezone\": \"{{timezone}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

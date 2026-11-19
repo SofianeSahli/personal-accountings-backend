@@ -35,7 +35,7 @@ final class ApiErrorRenderer
             return null;
         }
 
-        $error = $this->describe($exception);
+        $error = $this->describe($this->authorizationCauseOr($exception));
 
         return new JsonResponse(
             ['error' => $this->body($error, $exception)],
@@ -54,6 +54,7 @@ final class ApiErrorRenderer
                 ValidationCodes::from($exception->validator),
             ),
             $exception instanceof AuthenticationException => new ApiException('auth.unauthenticated', Response::HTTP_UNAUTHORIZED),
+            $exception instanceof AuthorizationException && is_string($exception->toResponse()->code()) => $this->namedDenial($exception),
             $exception instanceof AuthorizationException && $exception->status() === Response::HTTP_NOT_FOUND => $this->notFound(),
             $exception instanceof AuthorizationException,
             $exception instanceof AccessDeniedHttpException => new ApiException('auth.forbidden', Response::HTTP_FORBIDDEN),
@@ -79,6 +80,21 @@ final class ApiErrorRenderer
                 ),
             default => new ApiException('server.error', Response::HTTP_INTERNAL_SERVER_ERROR),
         };
+    }
+
+    private function authorizationCauseOr(Throwable $exception): Throwable
+    {
+        $cause = $exception->getPrevious();
+
+        return $exception instanceof HttpExceptionInterface && $cause instanceof AuthorizationException ? $cause : $exception;
+    }
+
+    private function namedDenial(AuthorizationException $exception): ApiException
+    {
+        return new ApiException(
+            (string) $exception->toResponse()->code(),
+            $exception->status() ?? Response::HTTP_FORBIDDEN,
+        );
     }
 
     private function notFound(): ApiException

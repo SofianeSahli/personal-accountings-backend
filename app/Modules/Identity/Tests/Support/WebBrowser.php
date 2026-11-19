@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Tests\Support;
 
+use App\Modules\Identity\database\factories\UserFactory;
+use App\Modules\Identity\Models\User;
 use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -41,6 +43,16 @@ final class WebBrowser
         return $browser;
     }
 
+    public static function signedInAs(User $user): self
+    {
+        $browser = self::open();
+        $browser->postJson('/api/v1/auth/email/login', ['email' => $user->email, 'password' => UserFactory::PASSWORD])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'signed_in');
+
+        return $browser;
+    }
+
     /**
      * @param  array<string, mixed>  $body
      * @return TestResponse<Response>
@@ -48,6 +60,15 @@ final class WebBrowser
     public function postJson(string $uri, array $body = []): TestResponse
     {
         return $this->send('POST', $uri, $body);
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     * @return TestResponse<Response>
+     */
+    public function patchJson(string $uri, array $body = []): TestResponse
+    {
+        return $this->send('PATCH', $uri, $body);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Shared\Errors\ApiException;
 use App\Shared\Tests\Support\RejectsEverything;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Access\Response as GateResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -28,6 +29,9 @@ beforeEach(function (): void {
         ]));
         Route::get('unauthenticated', fn () => throw new AuthenticationException);
         Route::get('forbidden', fn () => throw new AuthorizationException);
+        Route::get('denied-with-code', fn () => GateResponse::deny(code: 'book.forbidden')->authorize());
+        Route::get('hidden-with-code', fn () => GateResponse::denyAsNotFound(code: 'book.not_found')->authorize());
+        Route::get('hidden-without-code', fn () => GateResponse::denyAsNotFound()->authorize());
         Route::get('missing-model', fn () => throw new ModelNotFoundException);
         Route::get('get-only', fn () => ['data' => []]);
         Route::get('throttled', fn () => throw new ThrottleRequestsException(headers: ['Retry-After' => 42]));
@@ -71,6 +75,16 @@ it('REQ-6.4 maps framework exceptions to stable codes', function (string $method
     'csrf mismatch' => ['GET', '/api/v1/_probe/csrf-mismatch', 419, 'auth.csrf_mismatch'],
     'maintenance' => ['GET', '/api/v1/_probe/maintenance', 503, 'server.unavailable'],
     'other http status' => ['GET', '/api/v1/_probe/bad-request', 500, 'server.error'],
+]);
+
+it('REQ-6.4 uses the code a policy denial names, else the generic one', function (string $uri, int $status, string $code): void {
+    getJson($uri)
+        ->assertStatus($status)
+        ->assertExactJson(['error' => ['code' => $code]]);
+})->with([
+    'denied with code' => ['/api/v1/_probe/denied-with-code', 403, 'book.forbidden'],
+    'hidden with code' => ['/api/v1/_probe/hidden-with-code', 404, 'book.not_found'],
+    'hidden without code' => ['/api/v1/_probe/hidden-without-code', 404, 'request.not_found'],
 ]);
 
 it('REQ-6.4 adds retry_after_seconds and keeps the Retry-After header when throttled', function (): void {

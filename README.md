@@ -3,7 +3,7 @@
 Laravel API for a household expenses app. A household records its shared income, expenses and savings, and sees where the money goes.
 
 - **Client:** the Angular app `expenses-management`, later also packaged with Capacitor for Android and iOS.
-- **Status:** spec 001 (foundations) and spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in) are done. Households and transactions arrive with specs 003–005.
+- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in) and spec 003 (books and households: personal books, one household per user with its book, members list) are done. Invitations and transactions arrive with specs 004–005.
 - **Working rules:** [CLAUDE.md](CLAUDE.md) holds the architecture, coding and security rules. Every feature starts as a spec in [specs/](specs/).
 
 ## Stack
@@ -79,7 +79,7 @@ A web client calls `GET /sanctum/csrf-cookie`, then signs in. A mobile client se
 
 ### Postman
 
-[postman/](postman/) holds a collection of every route and a local environment. Import both, select **Household Expenses — local**, and set `AUTH_TEST_MODE=true` in `.env` so every code is `000000`. Requests run in mobile (token) mode, and sign-in answers store `token` and `pending_sign_in` for the next requests.
+[postman/](postman/) holds a collection of every route and a local environment. Import both, select **Household Expenses — local**, and set `AUTH_TEST_MODE=true` in `.env` so every code is `000000`. Requests run in mobile (token) mode, and sign-in answers store `token` and `pending_sign_in` for the next requests; creating a household or a book stores `household_id` or `book_id`.
 
 ## Everyday commands
 
@@ -98,7 +98,7 @@ Tests always run against MySQL `expenses_test`. The suite refuses to start on an
 
 ```
 app/
-  Modules/<Module>/   one folder per business domain, added by specs (Identity today; Household, Ledger later)
+  Modules/<Module>/   one folder per business domain, added by specs (Identity, Household, Ledger)
   Shared/             cross-cutting code: errors, JSON-only middleware, request ids, Money, health
   Providers/
 specs/                one folder per spec: requirements, design, tasks, API contract
@@ -110,7 +110,10 @@ tests/Architecture/   rules that every class under app/ must follow
 - Every route lives under `/api/v1` and speaks JSON only. A request body that isn't a JSON object or array gets `415`.
 - Errors carry a stable code and never a message: `{"error": {"code": "request.not_found"}}`. Validation errors list codes per field: `{"error": {"code": "validation.failed", "fields": {"amount": ["amount.required"]}}}`.
 - Every response has an `X-Request-Id` header, which also appears in the logs.
+- Money belongs to a **book**: a personal book of one account, or the book of a household. Each book has its currency (fixed at creation) and timezone.
 - Amounts are integers in the currency's minor unit (millimes for TND, cents for EUR), sent along with an ISO 4217 currency code.
+- Lists use cursor pagination: 25 items per page, `?cursor=` with the `meta.next_cursor` of the previous page.
+- A record you may not see answers `404`, exactly like one that does not exist.
 
 Each spec's `contract.md` lists its endpoints and error codes. The shared rules are in [specs/001-foundations/contract.md](specs/001-foundations/contract.md).
 
