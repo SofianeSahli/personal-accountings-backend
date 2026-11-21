@@ -3,7 +3,7 @@
 Laravel API for a household expenses app. A household records its shared income, expenses and savings, and sees where the money goes.
 
 - **Client:** the Angular app `expenses-management`, later also packaged with Capacitor for Android and iOS.
-- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in) and spec 003 (books and households: personal books, one household per user with its book, members list) are done. Invitations and transactions arrive with specs 004–005.
+- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in), spec 003 (books and households: personal books, one household per user with its book, members list) and spec 004 (invitations and members: invite by email or QR code, accept or decline, remove a member, leave) are done. Transactions arrive with spec 005.
 - **Working rules:** [CLAUDE.md](CLAUDE.md) holds the architecture, coding and security rules. Every feature starts as a spec in [specs/](specs/).
 
 ## Stack

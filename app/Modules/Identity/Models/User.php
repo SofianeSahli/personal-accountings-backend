@@ -41,6 +41,16 @@ final class User extends Authenticatable
         return $this->email_verified_at !== null;
     }
 
+    public function verifiedEmail(): ?string
+    {
+        return $this->hasConfirmedEmail() ? mb_strtolower($this->email) : null;
+    }
+
+    public function localeCode(): string
+    {
+        return $this->locale->value;
+    }
+
     public function hasTwoFactor(): bool
     {
         return $this->two_factor_enabled_at !== null;

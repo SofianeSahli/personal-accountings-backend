@@ -23,6 +23,18 @@ final class Household extends Model
 
     public const MORPH_ALIAS = 'household';
 
+    public const MEMBER_LIMIT = 10;
+
+    public static function lockLive(string $id): ?self
+    {
+        return self::query()->whereKey($id)->lockForUpdate()->first();
+    }
+
+    public function memberCount(): int
+    {
+        return $this->members()->count();
+    }
+
     /**
      * @return HasMany<HouseholdMember, $this>
      */

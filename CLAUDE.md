@@ -15,7 +15,7 @@ Laravel API for a household expenses app. A household (first the owner and his w
 - Spec 001 (Foundations) deleted the first prototype (`app/Http`, `app/Models`, `app/Repositories`, `app/Services`, `app/Pagination`, its migrations, seeders and factories). Never restore it from git or copy its patterns.
   - Prototype features (profile, categories, money transitions) are rebuilt from scratch by specs 002–005.
 - `app/` holds only `Modules`, `Shared` and `Providers`, and every rule below (architecture, Pint, Larastan) applies to all code with no exception.
-- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) and the households and books of spec 003 (`Household`, `Ledger`). Invitations and transactions come with specs 004–005.
+- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) the households and books of spec 003 (`Household`, `Ledger`), and the invitations and members of spec 004 (`Household`: email and QR invitations, accept, decline, remove, leave). Transactions come with spec 005.
 - There is no data to keep.
 
 ## Stack
@@ -106,7 +106,7 @@ Code is split by business domain under `app/Modules/<Module>/`. Cross-cutting co
 | Module | Owns (tables) | May depend on |
 |---|---|---|
 | `Identity` | users, personal_access_tokens, sessions, email_codes (sign-up, reset and two-step removal codes), pending_sign_ins | `Shared` only |
-| `Household` | households, household_user (role); household_invitations from spec 004 | `Identity`, `Shared` |
+| `Household` | households, household_user (role), household_invitations, household_qr_invitations | `Identity`, `Shared` |
 | `Ledger` | books; then categories, transactions, recurring_rules; also the summaries | `Household`, `Identity`, `Shared` |
 
 - **Dependencies point one way only: `Ledger` → `Household` → `Identity`.** `Identity` and `Shared` never use another module. This keeps modules reusable in other apps.
@@ -261,6 +261,8 @@ Sanctum in two modes on the **same paths** (`/api/v1/auth/...`). Both use the sa
   - Secrets and environment values stay in `.env`, never in code or git.
   - `.env.example` mirrors `.env`: same keys, safe values, empty secrets. A key added to `.env` goes into `.env.example` in the same change.
 - **Hashing:** store only hashes of passwords, emailed codes and invitation tokens. Invitations are single-use and expire.
+  - Email invitations carry no token: they are matched to the invitee's verified account email.
+  - QR invitation tokens are stored as SHA-256 hashes, work once and expire after 10 minutes. They travel in request bodies, never in URLs.
 - **Logging:** log no personal data — names, emails, amounts, notes, passwords, codes or tokens.
 - **Production:** `APP_DEBUG=false` outside local. Errors return a generic body and are logged with a request id.
 - **Proxies:** rate limits use `$request->ip()`. Behind a load balancer or reverse proxy, configure `trustProxies` before the first production deploy.
