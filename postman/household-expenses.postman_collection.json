@@ -976,6 +976,430 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Invitations and members (spec 004)",
+      "description": "Email and QR invitations, removing a member, leaving. Contract: `specs/004-invitations/contract.md`.",
+      "item": [
+        {
+          "name": "Email invitations",
+          "item": [
+            {
+              "name": "Invite by email",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/invitations",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "invitations"
+                  ]
+                },
+                "description": "Owner only. Invites an address to join as `member` and queues a notice email in your language (no link, no token). Same answer whether or not an account exists for the address. Valid 7 days. Stores `invitation_id`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** 20 invitations per household per rolling 24 hours\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `403 household.forbidden`, `422 validation.failed`, `422 invitation.self`, `422 invitation.already_member`, `422 invitation.already_pending`, `422 household.member_limit`, `422 invitation.limit_reached`, `429 request.throttled`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{invitee_email}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "const value = body.data && body.data.id;",
+                      "if (pm.response.code === 201 && value) { pm.environment.set('invitation_id', value); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List pending invitations",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/invitations",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "invitations"
+                  ]
+                },
+                "description": "Owner only. The household's pending invitations (not answered, not cancelled, not expired), oldest first. Cursor pagination.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `403 household.forbidden`"
+              }
+            },
+            {
+              "name": "Cancel an invitation",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/invitations/{{invitation_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "invitations",
+                    "{{invitation_id}}"
+                  ]
+                },
+                "description": "Owner only. Cancels a pending invitation. No email is sent.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `403 household.forbidden`, `404 invitation.not_found`"
+              }
+            },
+            {
+              "name": "List my invitations",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/invitations",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "invitations"
+                  ]
+                },
+                "description": "The pending invitations sent to your confirmed account email, in any letter case. Empty while your email is not confirmed. Stores the first one's id in `invitation_id`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "const value = body.data && body.data[0] && body.data[0].id;",
+                      "if (pm.response.code === 200 && value) { pm.environment.set('invitation_id', value); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Accept an invitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/invitations/{{invitation_id}}/accept",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "invitations",
+                    "{{invitation_id}}",
+                    "accept"
+                  ]
+                },
+                "description": "Joins the household as `member` and answers the household. The invitation stays pending when you are refused for `already_joined` or `member_limit`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 invitation.not_found`, `422 household.already_joined`, `422 household.member_limit`"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "const value = body.data && body.data.id;",
+                      "if (pm.response.code === 200 && value) { pm.environment.set('household_id', value); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Decline an invitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/invitations/{{invitation_id}}/decline",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "invitations",
+                    "{{invitation_id}}",
+                    "decline"
+                  ]
+                },
+                "description": "Declines a pending invitation sent to you.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 invitation.not_found`"
+              }
+            }
+          ]
+        },
+        {
+          "name": "QR invitations",
+          "item": [
+            {
+              "name": "Show a QR invitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/qr-invitations",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "qr-invitations"
+                  ]
+                },
+                "description": "Owner only. Creates a QR invitation that works once for 10 minutes and cancels the previous unused one. The `token` is shown only here; the app draws it as a QR code. Stores `qr_token`.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** creations (10 per minute per account, shared with households and books)\n\n**Errors:** `401 auth.unauthenticated`, `429 request.throttled`, `404 household.not_found`, `403 household.forbidden`, `422 household.member_limit`"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "const value = body.data && body.data.token;",
+                      "if (pm.response.code === 201 && value) { pm.environment.set('qr_token', value); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Preview a scanned QR code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/qr-invitations/preview",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "qr-invitations",
+                    "preview"
+                  ]
+                },
+                "description": "Shows the household and the inviter of a scanned QR code. Changes nothing. Needs a confirmed email.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** household-qr (10 per minute per account, shared with joining)\n\n**Errors:** `401 auth.unauthenticated`, `429 request.throttled`, `422 validation.failed`, `404 invitation.not_found`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{qr_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Join with a scanned QR code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/qr-invitations/accept",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "qr-invitations",
+                    "accept"
+                  ]
+                },
+                "description": "Joins the household of a scanned QR code as `member`; the code then stops working. Needs a confirmed email.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** household-qr (10 per minute per account, shared with preview)\n\n**Errors:** `401 auth.unauthenticated`, `429 request.throttled`, `422 validation.failed`, `404 invitation.not_found`, `422 household.already_joined`, `422 household.member_limit`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{qr_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let body;",
+                      "try { body = pm.response.json(); } catch (e) { return; }",
+                      "const value = body.data && body.data.id;",
+                      "if (pm.response.code === 200 && value) { pm.environment.set('household_id', value); }"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Members",
+          "item": [
+            {
+              "name": "Remove a member",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/members/{{member_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "members",
+                    "{{member_id}}"
+                  ]
+                },
+                "description": "Owner only. Removes a member (account id from the members list). They lose access to the household and its book at once.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `403 household.forbidden`, `404 member.not_found`, `422 household.owner_cannot_leave`"
+              }
+            },
+            {
+              "name": "Leave the household",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/households/{{household_id}}/leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "households",
+                    "{{household_id}}",
+                    "leave"
+                  ]
+                },
+                "description": "Member only. Leaves the household and loses access to it and its book at once. The owner deletes the household instead.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 household.not_found`, `422 household.owner_cannot_leave`"
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
