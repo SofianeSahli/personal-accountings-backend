@@ -15,7 +15,7 @@ Laravel API for a household expenses app. A household (first the owner and his w
 - Spec 001 (Foundations) deleted the first prototype (`app/Http`, `app/Models`, `app/Repositories`, `app/Services`, `app/Pagination`, its migrations, seeders and factories). Never restore it from git or copy its patterns.
   - Prototype features (profile, categories, money transitions) are rebuilt from scratch by specs 002–005.
 - `app/` holds only `Modules`, `Shared` and `Providers`, and every rule below (architecture, Pint, Larastan) applies to all code with no exception.
-- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout). Households and transactions come with specs 003–005.
+- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) and the households and books of spec 003 (`Household`, `Ledger`). Invitations and transactions come with specs 004–005.
 - There is no data to keep.
 
 ## Stack
@@ -81,7 +81,7 @@ specs/
 
 1. **Requirements**: *what* and *why*.
    - User stories, and acceptance criteria in EARS form with stable IDs (`REQ-1.1`).
-   - Cover the unhappy paths: validation errors, unauthenticated, another household's data, rate limits, duplicates, date edge cases.
+   - Cover the unhappy paths: validation errors, unauthenticated, another user's or household's data, rate limits, duplicates, date edge cases.
    - List non-goals and open questions. **Ask the owner; never invent answers.** ⛔ Stop for approval.
 2. **Design**: *how*, mapped to the modules below.
    - Tables and migrations, actions, routes, policies, events, error codes, and `contract.md`.
@@ -106,8 +106,8 @@ Code is split by business domain under `app/Modules/<Module>/`. Cross-cutting co
 | Module | Owns (tables) | May depend on |
 |---|---|---|
 | `Identity` | users, personal_access_tokens, sessions, email_codes (sign-up, reset and two-step removal codes), pending_sign_ins | `Shared` only |
-| `Household` | households, household_user (role), household_invitations | `Identity`, `Shared` |
-| `Ledger` | categories, transactions, recurring_rules; also the summaries | `Household`, `Identity`, `Shared` |
+| `Household` | households, household_user (role); household_invitations from spec 004 | `Identity`, `Shared` |
+| `Ledger` | books; then categories, transactions, recurring_rules; also the summaries | `Household`, `Identity`, `Shared` |
 
 - **Dependencies point one way only: `Ledger` → `Household` → `Identity`.** `Identity` and `Shared` never use another module. This keeps modules reusable in other apps.
 - **New modules:** create one only when a spec needs it (for example `Reporting`, once summaries outgrow `Ledger`). No empty folders, no speculative layers.
@@ -131,7 +131,7 @@ app/Modules/Ledger/
   database/factories/
   routes.php               registered under /api/v1
   LedgerServiceProvider.php   loads migrations and routes, registers policies, events and rate limiters
-app/Shared/                CurrentHousehold, Money, ApiException + error renderer, RequireJson, …
+app/Shared/                Money, ApiException + error renderer, RequireJson, CreationLimit, …
 ```
 
 ### Module rules
@@ -166,25 +166,29 @@ app/Shared/                CurrentHousehold, Money, ApiException + error rendere
 
 ## Data
 
-- **Household scoping:**
-  - Every household-owned table has a `household_id`, and every query is scoped to the current household.
-  - Household routes are nested (`/api/v1/households/{household}/transactions`). `RequireHousehold` checks membership and binds `CurrentHousehold`.
-  - A user must never reach another household's data.
+- **Book scoping:** money data belongs to a **book**, owned by one account (a personal book) or by one household (the household's book).
+  - Every money table (transactions, recurring rules, …) has a `book_id`, and every query is scoped to the current book.
+  - Money routes are nested under the book (`/api/v1/books/{book}/transactions`). `RequireBook` checks access and binds `CurrentBook`.
+  - Access to a personal book: its account only. Access to a household's book: the household's live members, read at each request.
+  - `RequireHousehold` / `CurrentHousehold` guard the household routes (`/api/v1/households/{household}/…`).
+  - `CurrentHousehold` lives in `Household/Support` and `CurrentBook` in `Ledger/Support`: `Shared` never knows module models.
+  - A user must never reach another user's or household's data.
 - **Money:** an integer (`bigint`) in the currency's minor unit (TND: millimes, 3 decimals; EUR: cents).
   - Never floats, never decimals in PHP. Use `Shared\Money`.
-  - The household's currency (ISO 4217) gives the exponent, read from ICU (`ext-intl`); no currency is hard-coded.
+  - The book's currency (ISO 4217, chosen at creation, never changed) gives the exponent, read from ICU (`ext-intl`); no currency is hard-coded.
   - The API sends amounts as integers plus a currency code.
 - **Dates:**
   - A transaction date is a `date` (no time), exchanged as `YYYY-MM-DD`.
   - Timestamps are stored in UTC.
-  - "This month" is computed in the household's timezone.
+  - "This month" is computed in the book's timezone (IANA name).
 - **Keys:** primary keys are ordered UUIDs (`HasUuids`) stored as `CHAR(36)` (Laravel's `uuid()` column) with the `ascii` character set. Foreign keys to them use the same type. Never `BINARY(16)`.
   - Write them as `$table->uuid('id')->primary()->charset('ascii')->collation('ascii_bin')`, and the same on every foreign-key column.
 - **Deleting:**
-  - Transactions are soft-deleted.
+  - Transactions, books, households and household memberships are soft-deleted, never removed. A soft-deleted record answers `404` and is left out of lists and limits.
+  - A book's owner is polymorphic (`owner_type` `account` or `household` + `owner_id`, both `NOT NULL`) and is never empty. Owners are never hard-deleted, so it always points to a record.
   - Deleting a category never deletes transactions. Its spec decides whether to block or re-assign.
   - No `onDelete('cascade')` from reference data to money records.
-- **Seeding:** default categories are created per household by an action when the household is created, not by a global seeder.
+- **Seeding:** categories are one global two-level list (parents and their children) seeded in the database and shared by every book; the user only picks one. Every parent has an "Other" child and there is an "Other" parent; picking an "Other" category saves the name the user typed. Spec 005 holds the details.
 - **Migrations:** never edited once merged; add a new migration instead.
 
 ## API
@@ -234,7 +238,8 @@ Sanctum in two modes on the **same paths** (`/api/v1/auth/...`). Both use the sa
 
 ## Authorization
 
-- Policies on every route that touches household data: membership first, then role (`owner` / `member`) where the spec says so.
+- Policies on every route that touches household or book data: access first (membership, or owning the personal book), then role (`owner` / `member`) where the spec says so.
+- A policy names its own denial code (`Response::deny(code: 'book.forbidden')`, `Response::denyAsNotFound(code: 'book.not_found')`). A record you may not see answers exactly like one that does not exist.
 - UUIDs are not access control.
 
 ## Tests
@@ -244,7 +249,7 @@ Sanctum in two modes on the **same paths** (`/api/v1/auth/...`). Both use the sa
   - success
   - validation errors
   - unauthenticated access (401)
-  - access to another household's data
+  - access to another user's or household's data
   - Auth endpoints are tested in both modes: cookie and token.
 - **Every action with a business rule** has tests for that rule. Test names start with the requirement: `it('REQ-2.3 refuses a member of another household', …)`.
 - **Data:** use factories, never seeders. Assert money as exact integers.

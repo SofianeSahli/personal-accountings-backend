@@ -69,6 +69,8 @@ Response `422` (example)
 | 500 | `server.error` | Unexpected failure; no details unless `APP_DEBUG=true` |
 | 503 | `server.unavailable` | Maintenance mode |
 
+A policy may name its own code for a refusal (`403` or `404`, e.g. `book.forbidden`, `book.not_found`); it then replaces `auth.forbidden` / `request.not_found` (added by spec 003).
+
 ## GET /api/v1/health
 
 Auth: none · Policy: none · Rate limit: 60 requests / minute / IP (file store)

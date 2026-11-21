@@ -8,3 +8,5 @@ parameters:
     parseModelCastsMethod: true
     databaseMigrationsPath:
         - app/Modules/Identity/database/migrations
+        - app/Modules/Household/database/migrations
+        - app/Modules/Ledger/database/migrations
