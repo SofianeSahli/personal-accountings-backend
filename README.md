@@ -3,7 +3,7 @@
 Laravel API for a household expenses app. A household records its shared income, expenses and savings, and sees where the money goes.
 
 - **Client:** the Angular app `expenses-management`, later also packaged with Capacitor for Android and iOS.
-- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in), spec 003 (books and households: personal books, one household per user with its book, members list) and spec 004 (invitations and members: invite by email or QR code, accept or decline, remove a member, leave) are done. Transactions arrive with spec 005.
+- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in), spec 003 (books and households: personal books, one household per user with its book, members list), spec 004 (invitations and members: invite by email or QR code, accept or decline, remove a member, leave) and spec 005 (categories: the shared three-level category tree) are done. Transactions arrive with spec 006.
 - **Working rules:** [CLAUDE.md](CLAUDE.md) holds the architecture, coding and security rules. Every feature starts as a spec in [specs/](specs/).
 
 ## Stack
@@ -35,11 +35,12 @@ You need Docker. PHP, Composer and Artisan run inside the app container, never o
    docker compose up -d --build
    ```
 
-4. Generate the app key and create the tables:
+4. Generate the app key, create the tables and load the category list:
 
    ```bash
    docker compose exec personal-accounting-backend php artisan key:generate
    docker compose exec personal-accounting-backend php artisan migrate
+   docker compose exec personal-accounting-backend php artisan ledger:sync-categories
    ```
 
 5. Check that the API answers:
@@ -90,6 +91,7 @@ docker compose exec personal-accounting-backend vendor/bin/pint
 docker compose exec personal-accounting-backend vendor/bin/phpstan analyse
 docker compose exec personal-accounting-backend composer audit
 docker compose exec personal-accounting-backend php artisan route:list --path=api
+docker compose exec personal-accounting-backend php artisan ledger:sync-categories
 ```
 
 Tests always run against MySQL `expenses_test`. The suite refuses to start on any database whose name doesn't end in `_test`.
@@ -112,10 +114,40 @@ tests/Architecture/   rules that every class under app/ must follow
 - Every response has an `X-Request-Id` header, which also appears in the logs.
 - Money belongs to a **book**: a personal book of one account, or the book of a household. Each book has its currency (fixed at creation) and timezone.
 - Amounts are integers in the currency's minor unit (millimes for TND, cents for EUR), sent along with an ISO 4217 currency code.
-- Lists use cursor pagination: 25 items per page, `?cursor=` with the `meta.next_cursor` of the previous page.
+- Lists use cursor pagination: 25 items per page, `?cursor=` with the `meta.next_cursor` of the previous page. The category tree is the one exception: it comes whole, with an `ETag`.
 - A record you may not see answers `404`, exactly like one that does not exist.
 
 Each spec's `contract.md` lists its endpoints and error codes. The shared rules are in [specs/001-foundations/contract.md](specs/001-foundations/contract.md).
+
+## Categories
+
+Every book shares one category list with three levels: top category → group → leaf. Users only pick a leaf. The list lives in [app/Modules/Ledger/resources/categories.php](app/Modules/Ledger/resources/categories.php), and `GET /api/v1/categories` serves it (see [specs/005-categories/contract.md](specs/005-categories/contract.md)). The API sends translation keys (`categories.<code>.label`), never names: the app translates them.
+
+### Changing the category list
+
+1. Edit `app/Modules/Ledger/resources/categories.php`. You can add a category, change an emoji, move a category within its parent, or remove a category.
+2. Never rename or reuse a code, and never change a top category's type. Add a new code instead. A code is the public identifier that entries point to.
+3. Every group must end with its `other` leaf. Top categories and groups need an emoji.
+4. Run the command. It checks the file first and changes nothing if any rule is broken, listing every problem:
+
+   ```bash
+   docker compose exec personal-accounting-backend php artisan ledger:sync-categories
+   # Categories: 1 created, 0 updated, 0 retired, 0 restored, 169 unchanged.
+   ```
+
+   `--file=<path>` checks and syncs another file, for example a draft.
+5. Add the names of new categories to the app's `fr.json`, `en.json` and `ar.json`, under `categories.<code>.label`. Until then the app shows the parent's name.
+
+A category removed from the file is **retired**, not deleted: entries that use it keep it, the API still returns it with `retired: true`, and the app stops offering it. Put it back in the file to restore it.
+
+## Deploying
+
+Hosting is not chosen yet. Whatever it is, every deploy runs, in this order:
+
+```bash
+php artisan migrate --force
+php artisan ledger:sync-categories
+```
 
 ## Contributing
 

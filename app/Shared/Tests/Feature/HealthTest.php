@@ -98,7 +98,6 @@ it('REQ-12.3 answers 404 request.not_found on former legacy paths', function (st
         ->assertNotFound()
         ->assertExactJson(['error' => ['code' => 'request.not_found']]);
 })->with([
-    ['GET', '/api/v1/categories'],
     ['GET', '/api/v1/profile'],
     ['POST', '/api/v1/money-transition'],
     ['GET', '/api/v1/money-transition/summary'],

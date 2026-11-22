@@ -1400,6 +1400,38 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Categories (spec 005)",
+      "description": "The shared category tree. Contract: `specs/005-categories/contract.md`.",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "description": "The whole category tree, the same for every account: top categories → `groups` → `leaves`, in display order. Each node has `code`, `translation_key`, `emoji` and `retired`; tops add `type`, leaves add `is_other`. No names: the app translates `translation_key`. Not paginated. Run `php artisan ledger:sync-categories` once after `migrate`, or the list is empty.\n\nThe answer carries an `ETag`. Send it back as `If-None-Match` to get `304` with no body while the list is unchanged.\n\n**Auth:** signed in (bearer token or web session)  \n**Throttle:** 60 requests a minute per account\n\n**Errors:** `401 auth.unauthenticated`, `429 request.throttled`"
+          }
+        }
+      ]
     }
   ]
 }

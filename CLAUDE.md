@@ -13,9 +13,9 @@ Laravel API for a household expenses app. A household (first the owner and his w
 ## Current state — read before changing anything
 
 - Spec 001 (Foundations) deleted the first prototype (`app/Http`, `app/Models`, `app/Repositories`, `app/Services`, `app/Pagination`, its migrations, seeders and factories). Never restore it from git or copy its patterns.
-  - Prototype features (profile, categories, money transitions) are rebuilt from scratch by specs 002–005.
+  - Prototype features (profile, categories, money transitions) are rebuilt from scratch by specs 002–006.
 - `app/` holds only `Modules`, `Shared` and `Providers`, and every rule below (architecture, Pint, Larastan) applies to all code with no exception.
-- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) the households and books of spec 003 (`Household`, `Ledger`), and the invitations and members of spec 004 (`Household`: email and QR invitations, accept, decline, remove, leave). Transactions come with spec 005.
+- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) the households and books of spec 003 (`Household`, `Ledger`), the invitations and members of spec 004 (`Household`: email and QR invitations, accept, decline, remove, leave), and the category tree of spec 005 (`Ledger`: `GET /api/v1/categories`, filled by `ledger:sync-categories`). Transactions come with spec 006.
 - There is no data to keep.
 
 ## Stack
@@ -46,6 +46,7 @@ docker compose exec personal-accounting-backend php artisan test --compact --fil
 docker compose exec personal-accounting-backend vendor/bin/pint
 docker compose exec personal-accounting-backend vendor/bin/phpstan analyse
 docker compose exec personal-accounting-backend php artisan route:list --path=api
+docker compose exec personal-accounting-backend php artisan ledger:sync-categories   # after every migrate
 ```
 
 ---
@@ -74,7 +75,7 @@ specs/
     contract.md                  every endpoint this spec adds or changes (request, response, error codes)
 ```
 
-- **Numbering:** spec numbers follow the roadmap (001 Foundations, 002 Accounts, 003 Households, 004–005 Transactions and summary, …).
+- **Numbering:** spec numbers follow the roadmap (001 Foundations, 002 Accounts, 003 Households, 004 Invitations, 005 Categories, 006–007 Transactions and summary, …).
 - **Features in both repos:** a feature that touches both repos has the same number in both. The API contract lives in this repo's `contract.md`, and the frontend spec links to it.
 
 ### Phases — each ends with an explicit owner approval gate
@@ -95,7 +96,7 @@ specs/
    4. Tick the task (`- [x]`) and note any deviation.
    - If the spec turns out wrong or incomplete, stop, update it, and get approval. Code and spec never diverge silently.
 
-**Commits:** commit only when the owner asks. Use one feature or fix per branch. Messages reference the spec, e.g. `feat(ledger): record a transaction [spec 004, REQ-2.1]`. Never write "Generated with Claude Code" (or any variant of it) in a commit message or a pull request description, and never add a `Co-Authored-By: Claude` trailer.
+**Commits:** commit only when the owner asks. Use one feature or fix per branch. Messages reference the spec, e.g. `feat(ledger): record a transaction [spec 006, REQ-2.1]`. Never write "Generated with Claude Code" (or any variant of it) in a commit message or a pull request description, and never add a `Co-Authored-By: Claude` trailer.
 
 ---
 
@@ -107,7 +108,7 @@ Code is split by business domain under `app/Modules/<Module>/`. Cross-cutting co
 |---|---|---|
 | `Identity` | users, personal_access_tokens, sessions, email_codes (sign-up, reset and two-step removal codes), pending_sign_ins | `Shared` only |
 | `Household` | households, household_user (role), household_invitations, household_qr_invitations | `Identity`, `Shared` |
-| `Ledger` | books; then categories, transactions, recurring_rules; also the summaries | `Household`, `Identity`, `Shared` |
+| `Ledger` | books, categories; then transactions, recurring_rules; also the summaries | `Household`, `Identity`, `Shared` |
 
 - **Dependencies point one way only: `Ledger` → `Household` → `Identity`.** `Identity` and `Shared` never use another module. This keeps modules reusable in other apps.
 - **New modules:** create one only when a spec needs it (for example `Reporting`, once summaries outgrow `Ledger`). No empty folders, no speculative layers.
@@ -128,6 +129,8 @@ app/Modules/Ledger/
   Listeners/
   Tests/                   Pest feature and unit tests of this module (+ Tests/Support for scenario helpers)
   database/migrations/
+  Commands/                Artisan commands (ledger:sync-categories)
+  resources/               data files shipped with the module (categories.php: the category catalogue)
   database/factories/
   routes.php               registered under /api/v1
   LedgerServiceProvider.php   loads migrations and routes, registers policies, events and rate limiters
@@ -186,9 +189,14 @@ app/Shared/                Money, ApiException + error renderer, RequireJson, Cr
 - **Deleting:**
   - Transactions, books, households and household memberships are soft-deleted, never removed. A soft-deleted record answers `404` and is left out of lists and limits.
   - A book's owner is polymorphic (`owner_type` `account` or `household` + `owner_id`, both `NOT NULL`) and is never empty. Owners are never hard-deleted, so it always points to a record.
-  - Deleting a category never deletes transactions. Its spec decides whether to block or re-assign.
+  - Categories are never deleted, only retired (see "Categories"), so a transaction's category always exists.
   - No `onDelete('cascade')` from reference data to money records.
-- **Seeding:** categories are one global two-level list (parents and their children) seeded in the database and shared by every book; the user only picks one. Every parent has an "Other" child and there is an "Other" parent; picking an "Other" category saves the name the user typed. Spec 005 holds the details.
+- **Categories:** one global three-level list (top category → group → leaf) shared by every book; users only pick a leaf and never create, rename, reorder or hide categories. Spec 005 holds the details.
+  - The list lives in `app/Modules/Ledger/resources/categories.php`. `php artisan ledger:sync-categories` brings the `categories` table in line with it and runs after every `migrate`, in every environment. No seeder, no migration per list change.
+  - A category's dotted code (`food.groceries.supermarket`) is its public identifier: never renamed, never reused. Its type (`expense`, `income`, `saving`) never changes; a new code is needed instead.
+  - A category taken out of the file is **retired** (`retired_at`), never deleted, because entries point to it. It is still served, with `retired: true`.
+  - Every group ends with an `other` leaf; picking it (spec 006) saves the name the user typed.
+  - The database and the API hold **translation keys** (`categories.<code>.label`), never names. The app translates them; a new category needs its translations in the app.
 - **Migrations:** never edited once merged; add a new migration instead.
 
 ## API
@@ -197,7 +205,7 @@ app/Shared/                Money, ApiException + error renderer, RequireJson, Cr
   - REST under `/api/v1`, JSON only (`RequireJson`).
   - Health: `GET /api/v1/health` (Laravel's `/up` is removed).
   - A JSON resource for every response; never return raw models.
-  - Cursor pagination for lists.
+  - Cursor pagination for lists. The one exception is the category tree (`GET /api/v1/categories`), a fixed global list sent whole with an `ETag`.
 - **Errors:**
   - One format with a stable machine code and no user-facing text: `{"error": {"code": "transaction.not_found"}}`.
   - Validation errors: `{"error": {"code": "validation.failed", "fields": {"amount": ["amount.required"]}}}`. Field entries are codes (`<field>.<rule>`), never messages.

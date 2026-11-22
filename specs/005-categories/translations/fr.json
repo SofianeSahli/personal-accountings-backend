@@ -1,0 +1,514 @@
+{
+  "categories": {
+    "food": {
+      "label": "Alimentation",
+      "groceries": {
+        "label": "Courses",
+        "supermarket": {
+          "label": "Supermarché"
+        },
+        "meat_fish": {
+          "label": "Viande & poisson"
+        },
+        "fruit_vegetables": {
+          "label": "Fruits & légumes"
+        },
+        "bakery": {
+          "label": "Boulangerie"
+        },
+        "dairy": {
+          "label": "Produits laitiers"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "eating_out": {
+        "label": "Repas à l'extérieur",
+        "cafes": {
+          "label": "Cafés"
+        },
+        "restaurants": {
+          "label": "Restaurants"
+        },
+        "takeaway": {
+          "label": "À emporter & livraison"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "home": {
+      "label": "Logement & factures",
+      "housing": {
+        "label": "Logement",
+        "rent": {
+          "label": "Loyer"
+        },
+        "mortgage": {
+          "label": "Crédit immobilier"
+        },
+        "building_charges": {
+          "label": "Charges de copropriété"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "utilities": {
+        "label": "Énergie & eau",
+        "electricity": {
+          "label": "Électricité"
+        },
+        "water": {
+          "label": "Eau"
+        },
+        "gas_heating": {
+          "label": "Gaz & chauffage"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "telecom": {
+        "label": "Télécom",
+        "internet": {
+          "label": "Internet"
+        },
+        "mobile_phone": {
+          "label": "Téléphone mobile"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "family": {
+      "label": "Famille, animaux & maison",
+      "children": {
+        "label": "Enfants",
+        "baby_supplies": {
+          "label": "Articles pour bébé"
+        },
+        "toys": {
+          "label": "Jouets"
+        },
+        "childcare": {
+          "label": "Garde d'enfants"
+        },
+        "pocket_money": {
+          "label": "Argent de poche"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "education": {
+        "label": "Éducation",
+        "school_fees": {
+          "label": "Frais de scolarité"
+        },
+        "supplies_books": {
+          "label": "Fournitures & livres"
+        },
+        "tutoring": {
+          "label": "Cours particuliers"
+        },
+        "university": {
+          "label": "Université"
+        },
+        "activities": {
+          "label": "Activités"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "pets": {
+        "label": "Animaux",
+        "pet_food": {
+          "label": "Nourriture"
+        },
+        "vet": {
+          "label": "Vétérinaire"
+        },
+        "accessories": {
+          "label": "Accessoires"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "household": {
+        "label": "Maison",
+        "cleaning": {
+          "label": "Produits d'entretien"
+        },
+        "repairs": {
+          "label": "Réparations & entretien"
+        },
+        "furniture_appliances": {
+          "label": "Meubles & électroménager"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "transport": {
+      "label": "Transport",
+      "car": {
+        "label": "Voiture",
+        "fuel": {
+          "label": "Carburant"
+        },
+        "maintenance": {
+          "label": "Entretien"
+        },
+        "parking_tolls": {
+          "label": "Parking & péages"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "getting_around": {
+        "label": "Déplacements",
+        "taxi": {
+          "label": "Taxi & VTC"
+        },
+        "public_transport": {
+          "label": "Transports en commun"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "personal": {
+      "label": "Santé & personnel",
+      "health": {
+        "label": "Santé",
+        "pharmacy": {
+          "label": "Pharmacie"
+        },
+        "doctor": {
+          "label": "Médecin"
+        },
+        "dentist": {
+          "label": "Dentiste"
+        },
+        "lab_tests": {
+          "label": "Analyses"
+        },
+        "optician": {
+          "label": "Opticien"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "care": {
+        "label": "Soins personnels",
+        "toiletries": {
+          "label": "Produits d'hygiène"
+        },
+        "hairdresser_beauty": {
+          "label": "Coiffeur & beauté"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "clothing": {
+        "label": "Vêtements",
+        "clothes": {
+          "label": "Vêtements"
+        },
+        "shoes": {
+          "label": "Chaussures"
+        },
+        "children_clothes": {
+          "label": "Vêtements enfants"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "entertainment": {
+      "label": "Loisirs",
+      "outings": {
+        "label": "Sorties",
+        "cinema_shows": {
+          "label": "Cinéma & spectacles"
+        },
+        "events": {
+          "label": "Événements & activités"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "sport_hobbies": {
+        "label": "Sport & passe-temps",
+        "gym_sport": {
+          "label": "Salle de sport & sport"
+        },
+        "games_hobbies": {
+          "label": "Jeux & passe-temps"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "subscriptions": {
+        "label": "Abonnements",
+        "streaming": {
+          "label": "Streaming"
+        },
+        "apps_services": {
+          "label": "Applications & services"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "travel": {
+        "label": "Voyages",
+        "tickets": {
+          "label": "Billets"
+        },
+        "accommodation": {
+          "label": "Hébergement"
+        },
+        "activities": {
+          "label": "Activités"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "celebrations": {
+      "label": "Fêtes & dons",
+      "muslim_holidays": {
+        "label": "Fêtes musulmanes",
+        "ramadan": {
+          "label": "Ramadan"
+        },
+        "eid_al_fitr": {
+          "label": "Aïd el-Fitr"
+        },
+        "eid_al_adha": {
+          "label": "Aïd el-Kébir"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "christian_holidays": {
+        "label": "Fêtes chrétiennes",
+        "christmas": {
+          "label": "Noël"
+        },
+        "easter": {
+          "label": "Pâques"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "jewish_holidays": {
+        "label": "Fêtes juives",
+        "hanukkah": {
+          "label": "Hanoukka"
+        },
+        "passover": {
+          "label": "Pessa'h"
+        },
+        "rosh_hashanah": {
+          "label": "Roch Hachana"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "family_events": {
+        "label": "Événements familiaux",
+        "birthdays": {
+          "label": "Anniversaires"
+        },
+        "weddings": {
+          "label": "Mariages"
+        },
+        "new_year": {
+          "label": "Nouvel An"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "gifts_giving": {
+        "label": "Cadeaux & dons",
+        "gifts_given": {
+          "label": "Cadeaux offerts"
+        },
+        "charity": {
+          "label": "Dons & charité"
+        },
+        "family_help": {
+          "label": "Aide à la famille"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "finance": {
+      "label": "Finances & administratif",
+      "banking": {
+        "label": "Banque",
+        "bank_fees": {
+          "label": "Frais bancaires"
+        },
+        "loan_repayment": {
+          "label": "Remboursement de prêt"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "insurance": {
+        "label": "Assurances",
+        "home": {
+          "label": "Habitation"
+        },
+        "car": {
+          "label": "Auto"
+        },
+        "health": {
+          "label": "Santé"
+        },
+        "life": {
+          "label": "Vie"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "taxes_paperwork": {
+        "label": "Impôts & démarches",
+        "taxes": {
+          "label": "Impôts"
+        },
+        "official_fees": {
+          "label": "Frais administratifs"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "misc": {
+      "label": "Divers",
+      "tobacco_alcohol": {
+        "label": "Tabac & alcool",
+        "cigarettes": {
+          "label": "Cigarettes & tabac"
+        },
+        "vaping": {
+          "label": "Vapotage"
+        },
+        "shisha": {
+          "label": "Chicha"
+        },
+        "alcohol": {
+          "label": "Alcool"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "other": {
+        "label": "Autre",
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "income": {
+      "label": "Revenus",
+      "work": {
+        "label": "Travail",
+        "salary": {
+          "label": "Salaire"
+        },
+        "bonus": {
+          "label": "Prime"
+        },
+        "freelance": {
+          "label": "Freelance & revenus annexes"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "assets": {
+        "label": "Patrimoine",
+        "rental_income": {
+          "label": "Revenus locatifs"
+        },
+        "investment_income": {
+          "label": "Revenus de placements"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "other_income": {
+        "label": "Autres revenus",
+        "gifts_received": {
+          "label": "Cadeaux reçus"
+        },
+        "benefits": {
+          "label": "Aides & allocations"
+        },
+        "refunds": {
+          "label": "Remboursements"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    },
+    "savings": {
+      "label": "Épargne",
+      "reserves": {
+        "label": "Réserves",
+        "emergency_fund": {
+          "label": "Fonds d'urgence"
+        },
+        "savings_goal": {
+          "label": "Objectif d'épargne"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      },
+      "long_term": {
+        "label": "Long terme",
+        "investments": {
+          "label": "Placements"
+        },
+        "retirement": {
+          "label": "Retraite"
+        },
+        "other": {
+          "label": "Autre"
+        }
+      }
+    }
+  }
+}
