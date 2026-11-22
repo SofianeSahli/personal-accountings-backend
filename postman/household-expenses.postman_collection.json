@@ -1432,6 +1432,465 @@
           }
         }
       ]
+    },
+    {
+      "name": "Transactions (spec 006)",
+      "description": "Entries (the `transactions` of a book), recurring rules and suggestions for \"Other\" names. Every route is nested under a book: set `book_id` first (create a book in **Books and households**). Amounts are integers in the book currency's minor unit (TND: millimes). Full contract: `specs/006-transactions/contract.md`.",
+      "item": [
+        {
+          "name": "List entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/transactions?from={{entries_from}}&to={{entries_to}}&category={{category_code}}&type=expense",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{entries_from}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{entries_to}}",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{category_code}}",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "expense",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "The book's entries, newest date first, 25 per page (`?cursor=`). Filters, all optional and combined: `from`, `to` (`YYYY-MM-DD`, inclusive), `category` (a top, group or leaf code), `type` (`expense`, `income`, `saving`), `author` (an account id). Enable the ones you need.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`from.date_format`, `to.after_or_equal`, `category.not_found`, `type.in`, `author.uuid`)"
+          }
+        },
+        {
+          "name": "Record an entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "transactions"
+              ]
+            },
+            "description": "Records an expense, income or saving: the type comes from the leaf category. `id` is optional: a UUID made by the client, so a retried request answers the stored entry with `200` instead of a duplicate. `other_name` is required on an \"Other\" leaf only. Stores `transaction_id`.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `409 transaction.id_conflict`, `422 validation.failed` (`amount.*`, `date.*`, `category.not_found`, `category.not_leaf`, `category.retired`, `other_name.required`, `other_name.prohibited`, `comment.max`, `id.uuid`), `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{$guid}}\",\n  \"amount\": {{amount}},\n  \"date\": \"{{entry_date}}\",\n  \"category\": \"{{category_code}}\",\n  \"comment\": \"{{comment}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) { return; }",
+                  "if ((pm.response.code === 200 || pm.response.code === 201) && body.data && body.data.id) { pm.environment.set('transaction_id', body.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Record an \"Other\" entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "transactions"
+              ]
+            },
+            "description": "Same as **Record an entry**, on an \"Other\" leaf: `other_name` (1–60 characters) is required. Stores `transaction_id`.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** as **Record an entry**",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": {{amount}},\n  \"date\": \"{{entry_date}}\",\n  \"category\": \"{{other_category_code}}\",\n  \"other_name\": \"{{other_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) { return; }",
+                  "if ((pm.response.code === 201) && body.data && body.data.id) { pm.environment.set('transaction_id', body.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show an entry",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/transactions/{{transaction_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "transactions",
+                "{{transaction_id}}"
+              ]
+            },
+            "description": "One entry, with who recorded and last edited it.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `404 transaction.not_found`"
+          }
+        },
+        {
+          "name": "Edit an entry",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/transactions/{{transaction_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "transactions",
+                "{{transaction_id}}"
+              ]
+            },
+            "description": "Changes only the fields sent: `amount`, `date`, `category`, `other_name`, `comment`. Any member may edit any entry of the book. Moving to an \"Other\" leaf needs `other_name`; moving away clears it.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `404 transaction.not_found`, `422 validation.failed`, `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": {{amount}},\n  \"comment\": \"{{comment}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete an entry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/transactions/{{transaction_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "transactions",
+                "{{transaction_id}}"
+              ]
+            },
+            "description": "Deletes the entry (kept in the database, soft-deleted). It then answers `404`. An entry made by a recurring rule is never made again.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `404 transaction.not_found`, `429 request.throttled`"
+          }
+        },
+        {
+          "name": "Suggest \"Other\" names",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/other-names?category={{other_category_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "other-names"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "{{other_category_code}}"
+                }
+              ]
+            },
+            "description": "Up to 10 names already typed in this book for an \"Other\" leaf, most used first, then most recent. Names differing only in letter case count as one.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`category.required`, `category.not_found`, `category.not_other`)"
+          }
+        },
+        {
+          "name": "List recurring rules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/recurring-rules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "recurring-rules"
+              ]
+            },
+            "description": "The book's recurring rules, next date first (finished rules last), 25 per page (`?cursor=`).\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`"
+          }
+        },
+        {
+          "name": "Create a recurring rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/recurring-rules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "recurring-rules"
+              ]
+            },
+            "description": "Records the same entry on a schedule: `frequency` `weekly`, `monthly` or `yearly`, every `interval` (1–12, default 1), from `starts_on` (up to 1 year back or ahead) until the optional `ends_on`. A start in the past creates the entries due up to today at once. The hourly scheduler then records each entry on its date, in the book's timezone. Stores `recurring_rule_id`.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 recurring_rule.limit_reached` (100 per book), `422 validation.failed` (`frequency.in`, `interval.*`, `starts_on.*`, `ends_on.after_or_equal`, and the entry field codes), `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": {{amount}},\n  \"category\": \"{{category_code}}\",\n  \"comment\": \"{{comment}}\",\n  \"frequency\": \"monthly\",\n  \"interval\": 1,\n  \"starts_on\": \"{{rule_starts_on}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) { return; }",
+                  "if ((pm.response.code === 201) && body.data && body.data.id) { pm.environment.set('recurring_rule_id', body.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show a recurring rule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/recurring-rules/{{recurring_rule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "recurring-rules",
+                "{{recurring_rule_id}}"
+              ]
+            },
+            "description": "One rule, with `next_date` (`null` once it has ended).\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `404 recurring_rule.not_found`"
+          }
+        },
+        {
+          "name": "Edit a recurring rule",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/recurring-rules/{{recurring_rule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "recurring-rules",
+                "{{recurring_rule_id}}"
+              ]
+            },
+            "description": "Changes only the fields sent. Entries already made stay as they are; a new schedule applies from today.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `404 recurring_rule.not_found`, `422 validation.failed`, `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": {{amount}},\n  \"ends_on\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete a recurring rule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/recurring-rules/{{recurring_rule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "recurring-rules",
+                "{{recurring_rule_id}}"
+              ]
+            },
+            "description": "Stops the rule (soft-deleted). The entries it made stay.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, entries and rules together)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `404 recurring_rule.not_found`, `429 request.throttled`"
+          }
+        }
+      ]
     }
   ]
 }
