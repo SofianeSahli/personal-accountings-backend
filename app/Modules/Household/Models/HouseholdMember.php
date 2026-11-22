@@ -28,6 +28,11 @@ final class HouseholdMember extends Model
         return $this->role === HouseholdRole::Owner;
     }
 
+    public function endMembership(): bool
+    {
+        return self::query()->whereKey($this->id)->update([$this->getDeletedAtColumn() => now()]) === 1;
+    }
+
     /**
      * @return BelongsTo<Household, $this>
      */

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\Household\Events\HouseholdDeleted;
 use App\Modules\Household\Models\Household;
+use App\Modules\Household\Models\HouseholdInvitation;
 use App\Modules\Household\Models\HouseholdMember;
+use App\Modules\Household\Models\InvitationStatus;
 use App\Modules\Household\Tests\Support\HouseholdScenario;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Tests\Support\WebBrowser;
@@ -82,4 +84,26 @@ it('REQ-2.11 announces the deletion after commit with the household id', functio
     deleteJson("/api/v1/households/{$household->id}", [], HouseholdScenario::as($owner))->assertNoContent();
 
     Event::assertDispatched(HouseholdDeleted::class, fn (HouseholdDeleted $event): bool => $event->householdId === $household->id);
+});
+
+it('REQ-7.1 of spec 004 cancels the pending email and QR invitations, and leaves answered ones', function (): void {
+    $owner = User::factory()->create();
+    $household = HouseholdScenario::ownedBy($owner);
+    $invitee = User::factory()->create(['email' => 'amira@example.com']);
+    $pending = HouseholdScenario::invite($household, 'amira@example.com');
+    $declined = HouseholdScenario::invite($household, 'sami@example.com', HouseholdInvitation::factory()->declined());
+    $qr = HouseholdScenario::qrInvitation($household, 'scan-me');
+
+    deleteJson("/api/v1/households/{$household->id}", [], HouseholdScenario::as($owner))->assertNoContent();
+
+    $pending->refresh();
+    expect($pending->status)->toBe(InvitationStatus::Cancelled)
+        ->and($pending->closed_at)->not->toBeNull()
+        ->and($qr->refresh()->status)->toBe(InvitationStatus::Cancelled)
+        ->and($declined->refresh()->status)->toBe(InvitationStatus::Declined);
+    getJson('/api/v1/invitations', HouseholdScenario::as($invitee))->assertJsonPath('data', []);
+    postJson("/api/v1/invitations/{$pending->id}/accept", [], HouseholdScenario::as($invitee))
+        ->assertStatus(404)
+        ->assertExactJson(['error' => ['code' => 'invitation.not_found']]);
+    postJson('/api/v1/qr-invitations/accept', ['token' => 'scan-me'], HouseholdScenario::as($invitee))->assertStatus(404);
 });

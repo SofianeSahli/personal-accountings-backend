@@ -29,6 +29,11 @@ final class HouseholdPolicy
         return $this->ownerOnly($user, $household);
     }
 
+    public function manageMembers(User $user, ?Household $household): Response
+    {
+        return $this->ownerOnly($user, $household);
+    }
+
     private function ownerOnly(User $user, ?Household $household): Response
     {
         $membership = $this->membershipIn($user, $household);
