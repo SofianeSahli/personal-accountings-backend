@@ -58,6 +58,14 @@ final class CategoryFactory extends Factory
         ]);
     }
 
+    public static function newLeaf(CategoryType $type = CategoryType::Expense, bool $other = false): Category
+    {
+        $top = Category::factory()->create(['type' => $type]);
+        $group = Category::factory()->under($top, 'group')->create();
+
+        return Category::factory()->under($group, $other ? self::OTHER_SEGMENT : 'leaf')->create();
+    }
+
     public function retired(): static
     {
         return $this->state(fn (): array => ['retired_at' => now()]);
