@@ -240,7 +240,7 @@ This spec builds that ground and deletes the prototype. It adds no user-facing f
 - **REQ-12.2** WHEN legacy code is deleted, THE SYSTEM SHALL leave no reference to it in `bootstrap/`, `config/`, `routes/`, `database/` or `tests/`.
   - This includes `config/auth.php` (`App\Models\User`).
   - The app boots, and `php artisan migrate:fresh` succeeds on an empty database.
-- **REQ-12.3** WHEN a request reaches a former legacy path (e.g. `GET /api/v1/categories`, `POST /api/v1/money-transition`), THE SYSTEM SHALL respond `404` `request.not_found`.
+- **REQ-12.3** WHEN a request reaches a former legacy path (e.g. `GET /api/v1/profile`, `POST /api/v1/money-transition`; `GET /api/v1/categories` is served again since spec 005, per REQ-12.5), THE SYSTEM SHALL respond `404` `request.not_found`.
 - **REQ-12.4** THE SYSTEM SHALL make every PHP file that remains under `app/` pass the architecture tests (US-5), Pint and Larastan (US-4).
 - **REQ-12.5** IF a later spec needs a behaviour from the prototype THEN that spec SHALL define it anew; no prototype code is restored from git.
 

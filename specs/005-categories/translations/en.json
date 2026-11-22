@@ -1,0 +1,514 @@
+{
+  "categories": {
+    "food": {
+      "label": "Food",
+      "groceries": {
+        "label": "Groceries",
+        "supermarket": {
+          "label": "Supermarket"
+        },
+        "meat_fish": {
+          "label": "Meat & fish"
+        },
+        "fruit_vegetables": {
+          "label": "Fruit & vegetables"
+        },
+        "bakery": {
+          "label": "Bakery"
+        },
+        "dairy": {
+          "label": "Dairy"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "eating_out": {
+        "label": "Eating out",
+        "cafes": {
+          "label": "Cafés"
+        },
+        "restaurants": {
+          "label": "Restaurants"
+        },
+        "takeaway": {
+          "label": "Takeaway & delivery"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "home": {
+      "label": "Home & bills",
+      "housing": {
+        "label": "Housing",
+        "rent": {
+          "label": "Rent"
+        },
+        "mortgage": {
+          "label": "Mortgage"
+        },
+        "building_charges": {
+          "label": "Building charges"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "utilities": {
+        "label": "Utilities",
+        "electricity": {
+          "label": "Electricity"
+        },
+        "water": {
+          "label": "Water"
+        },
+        "gas_heating": {
+          "label": "Gas & heating"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "telecom": {
+        "label": "Telecom",
+        "internet": {
+          "label": "Internet"
+        },
+        "mobile_phone": {
+          "label": "Mobile phone"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "family": {
+      "label": "Family, pets & household",
+      "children": {
+        "label": "Children",
+        "baby_supplies": {
+          "label": "Baby supplies"
+        },
+        "toys": {
+          "label": "Toys"
+        },
+        "childcare": {
+          "label": "Childcare"
+        },
+        "pocket_money": {
+          "label": "Pocket money"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "education": {
+        "label": "Education",
+        "school_fees": {
+          "label": "School fees"
+        },
+        "supplies_books": {
+          "label": "Supplies & books"
+        },
+        "tutoring": {
+          "label": "Tutoring"
+        },
+        "university": {
+          "label": "University"
+        },
+        "activities": {
+          "label": "Activities"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "pets": {
+        "label": "Pets",
+        "pet_food": {
+          "label": "Pet food"
+        },
+        "vet": {
+          "label": "Vet"
+        },
+        "accessories": {
+          "label": "Accessories"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "household": {
+        "label": "Household",
+        "cleaning": {
+          "label": "Cleaning products"
+        },
+        "repairs": {
+          "label": "Repairs & maintenance"
+        },
+        "furniture_appliances": {
+          "label": "Furniture & appliances"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "transport": {
+      "label": "Transport",
+      "car": {
+        "label": "Car",
+        "fuel": {
+          "label": "Fuel"
+        },
+        "maintenance": {
+          "label": "Maintenance"
+        },
+        "parking_tolls": {
+          "label": "Parking & tolls"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "getting_around": {
+        "label": "Getting around",
+        "taxi": {
+          "label": "Taxi & ride-hailing"
+        },
+        "public_transport": {
+          "label": "Public transport"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "personal": {
+      "label": "Personal & health",
+      "health": {
+        "label": "Health",
+        "pharmacy": {
+          "label": "Pharmacy"
+        },
+        "doctor": {
+          "label": "Doctor"
+        },
+        "dentist": {
+          "label": "Dentist"
+        },
+        "lab_tests": {
+          "label": "Lab tests"
+        },
+        "optician": {
+          "label": "Optician"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "care": {
+        "label": "Personal care",
+        "toiletries": {
+          "label": "Toiletries"
+        },
+        "hairdresser_beauty": {
+          "label": "Hairdresser & beauty"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "clothing": {
+        "label": "Clothing",
+        "clothes": {
+          "label": "Clothes"
+        },
+        "shoes": {
+          "label": "Shoes"
+        },
+        "children_clothes": {
+          "label": "Children's clothes"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "entertainment": {
+      "label": "Entertainment & hobbies",
+      "outings": {
+        "label": "Outings",
+        "cinema_shows": {
+          "label": "Cinema & shows"
+        },
+        "events": {
+          "label": "Events & activities"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "sport_hobbies": {
+        "label": "Sport & hobbies",
+        "gym_sport": {
+          "label": "Gym & sport"
+        },
+        "games_hobbies": {
+          "label": "Games & hobbies"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "subscriptions": {
+        "label": "Subscriptions",
+        "streaming": {
+          "label": "Streaming"
+        },
+        "apps_services": {
+          "label": "Apps & services"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "travel": {
+        "label": "Travel",
+        "tickets": {
+          "label": "Tickets"
+        },
+        "accommodation": {
+          "label": "Accommodation"
+        },
+        "activities": {
+          "label": "Activities"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "celebrations": {
+      "label": "Celebrations & giving",
+      "muslim_holidays": {
+        "label": "Muslim holidays",
+        "ramadan": {
+          "label": "Ramadan"
+        },
+        "eid_al_fitr": {
+          "label": "Eid al-Fitr"
+        },
+        "eid_al_adha": {
+          "label": "Eid al-Adha"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "christian_holidays": {
+        "label": "Christian holidays",
+        "christmas": {
+          "label": "Christmas"
+        },
+        "easter": {
+          "label": "Easter"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "jewish_holidays": {
+        "label": "Jewish holidays",
+        "hanukkah": {
+          "label": "Hanukkah"
+        },
+        "passover": {
+          "label": "Passover"
+        },
+        "rosh_hashanah": {
+          "label": "Rosh Hashanah"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "family_events": {
+        "label": "Family events",
+        "birthdays": {
+          "label": "Birthdays"
+        },
+        "weddings": {
+          "label": "Weddings"
+        },
+        "new_year": {
+          "label": "New Year"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "gifts_giving": {
+        "label": "Gifts & giving",
+        "gifts_given": {
+          "label": "Gifts given"
+        },
+        "charity": {
+          "label": "Charity & donations"
+        },
+        "family_help": {
+          "label": "Help to family"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "finance": {
+      "label": "Finance & admin",
+      "banking": {
+        "label": "Banking",
+        "bank_fees": {
+          "label": "Bank fees"
+        },
+        "loan_repayment": {
+          "label": "Loan repayment"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "insurance": {
+        "label": "Insurance",
+        "home": {
+          "label": "Home"
+        },
+        "car": {
+          "label": "Car"
+        },
+        "health": {
+          "label": "Health"
+        },
+        "life": {
+          "label": "Life"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "taxes_paperwork": {
+        "label": "Taxes & paperwork",
+        "taxes": {
+          "label": "Taxes"
+        },
+        "official_fees": {
+          "label": "Official fees"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "misc": {
+      "label": "Miscellaneous",
+      "tobacco_alcohol": {
+        "label": "Tobacco & alcohol",
+        "cigarettes": {
+          "label": "Cigarettes & tobacco"
+        },
+        "vaping": {
+          "label": "Vaping"
+        },
+        "shisha": {
+          "label": "Shisha"
+        },
+        "alcohol": {
+          "label": "Alcohol"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "other": {
+        "label": "Other",
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "income": {
+      "label": "Income",
+      "work": {
+        "label": "Work",
+        "salary": {
+          "label": "Salary"
+        },
+        "bonus": {
+          "label": "Bonus"
+        },
+        "freelance": {
+          "label": "Freelance & side income"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "assets": {
+        "label": "Assets",
+        "rental_income": {
+          "label": "Rental income"
+        },
+        "investment_income": {
+          "label": "Investment income"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "other_income": {
+        "label": "Other income",
+        "gifts_received": {
+          "label": "Gifts received"
+        },
+        "benefits": {
+          "label": "Benefits & allowances"
+        },
+        "refunds": {
+          "label": "Refunds"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    },
+    "savings": {
+      "label": "Savings",
+      "reserves": {
+        "label": "Reserves",
+        "emergency_fund": {
+          "label": "Emergency fund"
+        },
+        "savings_goal": {
+          "label": "Savings goal"
+        },
+        "other": {
+          "label": "Other"
+        }
+      },
+      "long_term": {
+        "label": "Long term",
+        "investments": {
+          "label": "Investments"
+        },
+        "retirement": {
+          "label": "Retirement"
+        },
+        "other": {
+          "label": "Other"
+        }
+      }
+    }
+  }
+}

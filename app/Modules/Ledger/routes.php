@@ -3,11 +3,16 @@
 declare(strict_types=1);
 
 use App\Modules\Ledger\Controllers\BookController;
+use App\Modules\Ledger\Controllers\CategoryController;
 use App\Modules\Ledger\Controllers\Middleware\RequireBook;
 use App\Shared\Http\CreationLimit;
+use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('categories', [CategoryController::class, 'index'])
+        ->middleware(['throttle:60,1', SetCacheHeaders::using('private;no_cache;etag')]);
+
     Route::get('books', [BookController::class, 'index']);
     Route::post('books', [BookController::class, 'store'])
         ->middleware('throttle:'.CreationLimit::NAME);
