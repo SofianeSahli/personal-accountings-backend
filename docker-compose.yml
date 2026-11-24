@@ -106,6 +106,16 @@ services:
     networks:
       - personal-accounting-backend-network
 
+  mailpit:
+    image: axllent/mailpit:v1.34.0
+    restart: unless-stopped
+    labels:
+      scope: local-only
+    ports:
+      - "127.0.0.1:${MAILPIT_FORWARD_PORT:-8025}:8025"
+    networks:
+      - personal-accounting-backend-network
+
 configs:
   mysql-test-database:
     content: |

@@ -9,6 +9,7 @@ use App\Modules\Ledger\Controllers\Middleware\RequireRecurringRule;
 use App\Modules\Ledger\Controllers\Middleware\RequireTransaction;
 use App\Modules\Ledger\Controllers\OtherNameController;
 use App\Modules\Ledger\Controllers\RecurringRuleController;
+use App\Modules\Ledger\Controllers\SummaryController;
 use App\Modules\Ledger\Controllers\TransactionController;
 use App\Modules\Ledger\Support\LedgerWriteLimit;
 use App\Shared\Http\CreationLimit;
@@ -48,5 +49,7 @@ Route::middleware('auth:sanctum')->group(function () use ($writes): void {
         });
 
         Route::get('other-names', [OtherNameController::class, 'index']);
+
+        Route::get('summary', [SummaryController::class, 'show']);
     });
 });
