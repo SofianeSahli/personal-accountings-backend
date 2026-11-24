@@ -1891,6 +1891,112 @@
           }
         }
       ]
+    },
+    {
+      "name": "Summary (spec 007)",
+      "description": "Where the money of a period went. See specs/007-summary/contract.md.",
+      "item": [
+        {
+          "name": "This month",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "summary"
+              ]
+            },
+            "description": "Summary of the current calendar month in the book's timezone. Returns the totals per type (income, expense, saving), the balance (income − expense − saving) and the number of entries, then the same by category tree (with the names typed under \"Other\" leaves), by member, by day and by month. Amounts are integers in the book currency's minor unit.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`"
+          }
+        },
+        {
+          "name": "One month",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/summary?month={{summary_month}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "{{summary_month}}"
+                }
+              ]
+            },
+            "description": "Summary of one calendar month (`month=YYYY-MM`), from its first to its last day. Returns the totals per type (income, expense, saving), the balance (income − expense − saving) and the number of entries, then the same by category tree (with the names typed under \"Other\" leaves), by member, by day and by month. Amounts are integers in the book currency's minor unit.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`month.date_format`, `month.after_or_equal`, `month.prohibits`)"
+          }
+        },
+        {
+          "name": "Custom range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/summary?from={{summary_from}}&to={{summary_to}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{summary_from}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{summary_to}}"
+                }
+              ]
+            },
+            "description": "Summary of a custom range (`from`, `to`, `YYYY-MM-DD`), both days included, at most one year (`to` before `from` + 1 year). Returns the totals per type (income, expense, saving), the balance (income − expense − saving) and the number of entries, then the same by category tree (with the names typed under \"Other\" leaves), by member, by day and by month. Amounts are integers in the book currency's minor unit.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`from.required_with`, `from.date_format`, `from.after_or_equal`, `to.required_with`, `to.date_format`, `to.after_or_equal`, `to.within_one_year`)"
+          }
+        }
+      ]
     }
   ]
 }

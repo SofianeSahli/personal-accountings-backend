@@ -15,7 +15,7 @@ Laravel API for a household expenses app. A household (first the owner and his w
 - Spec 001 (Foundations) deleted the first prototype (`app/Http`, `app/Models`, `app/Repositories`, `app/Services`, `app/Pagination`, its migrations, seeders and factories). Never restore it from git or copy its patterns.
   - Prototype features (profile, categories, money transitions) are rebuilt from scratch by specs 002–006.
 - `app/` holds only `Modules`, `Shared` and `Providers`, and every rule below (architecture, Pint, Larastan) applies to all code with no exception.
-- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) the households and books of spec 003 (`Household`, `Ledger`), the invitations and members of spec 004 (`Household`: email and QR invitations, accept, decline, remove, leave), the category tree of spec 005 (`Ledger`: `GET /api/v1/categories`, filled by `ledger:sync-categories`), and the money of spec 006 (`Ledger`: entries under `/api/v1/books/{book}/transactions`, recurring rules under `/api/v1/books/{book}/recurring-rules`, "Other" name suggestions under `/api/v1/books/{book}/other-names`). The `scheduler` service runs `ledger:record-due-entries` every hour, which records the entries recurring rules make. The summary comes with spec 007.
+- The API serves `GET /api/v1/health` and the account endpoints of spec 002 (`Identity`: sign-up, sign-in, reset, Google, two-step, `/me`, logout) the households and books of spec 003 (`Household`, `Ledger`), the invitations and members of spec 004 (`Household`: email and QR invitations, accept, decline, remove, leave), the category tree of spec 005 (`Ledger`: `GET /api/v1/categories`, filled by `ledger:sync-categories`), and the money of spec 006 (`Ledger`: entries under `/api/v1/books/{book}/transactions`, recurring rules under `/api/v1/books/{book}/recurring-rules`, "Other" name suggestions under `/api/v1/books/{book}/other-names`), and the summary of spec 007 (`Ledger`: `GET /api/v1/books/{book}/summary`, computed in SQL on each request). The `scheduler` service runs `ledger:record-due-entries` every hour, which records the entries recurring rules make.
 - There is no data to keep.
 
 ## Stack
@@ -110,7 +110,7 @@ Code is split by business domain under `app/Modules/<Module>/`. Cross-cutting co
 |---|---|---|
 | `Identity` | users, personal_access_tokens, sessions, email_codes (sign-up, reset and two-step removal codes), pending_sign_ins | `Shared` only |
 | `Household` | households, household_user (role), household_invitations, household_qr_invitations | `Identity`, `Shared` |
-| `Ledger` | books, categories, transactions, recurring_rules; then the summaries | `Household`, `Identity`, `Shared` |
+| `Ledger` | books, categories, transactions, recurring_rules (the summary has no table: it is computed on read) | `Household`, `Identity`, `Shared` |
 
 - **Dependencies point one way only: `Ledger` → `Household` → `Identity`.** `Identity` and `Shared` never use another module. This keeps modules reusable in other apps.
 - **New modules:** create one only when a spec needs it (for example `Reporting`, once summaries outgrow `Ledger`). No empty folders, no speculative layers.

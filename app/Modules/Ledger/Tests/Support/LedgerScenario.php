@@ -10,6 +10,7 @@ use App\Modules\Ledger\Models\Book;
 use App\Modules\Ledger\Models\Category;
 use App\Modules\Ledger\Models\CategoryLevel;
 use App\Modules\Ledger\Models\CategoryType;
+use App\Modules\Ledger\Models\Transaction;
 
 final class LedgerScenario
 {
@@ -110,6 +111,18 @@ final class LedgerScenario
     public static function transactionsUrl(Book $book, string $suffix = ''): string
     {
         return "/api/v1/books/{$book->id}/transactions".$suffix;
+    }
+
+    public static function summaryUrl(Book $book, string $query = ''): string
+    {
+        return "/api/v1/books/{$book->id}/summary".($query === '' ? '' : '?'.$query);
+    }
+
+    public static function spend(Book $book, string $code, int $amount, string $date, ?User $by = null, ?string $otherName = null): Transaction
+    {
+        $factory = Transaction::factory()->inBook($book)->in(self::category($code), $otherName);
+
+        return ($by === null ? $factory : $factory->by($by))->create(['amount' => $amount, 'date' => $date]);
     }
 
     public static function rulesUrl(Book $book, string $suffix = ''): string

@@ -3,7 +3,7 @@
 Laravel API for a household expenses app. A household records its shared income, expenses and savings, and sees where the money goes.
 
 - **Client:** the Angular app `expenses-management`, later also packaged with Capacitor for Android and iOS.
-- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in), spec 003 (books and households: personal books, one household per user with its book, members list), spec 004 (invitations and members: invite by email or QR code, accept or decline, remove a member, leave) spec 005 (categories: the shared three-level category tree) and spec 006 (money: entries, recurring rules, "Other" name suggestions) are done. The monthly summary arrives with spec 007.
+- **Status:** spec 001 (foundations), spec 002 (accounts: sign-up, sign-in on the web and on mobile, password reset, Google and two-step sign-in), spec 003 (books and households: personal books, one household per user with its book, members list), spec 004 (invitations and members: invite by email or QR code, accept or decline, remove a member, leave) spec 005 (categories: the shared three-level category tree), spec 006 (money: entries, recurring rules, "Other" name suggestions) and spec 007 (the summary: totals by type, category, member, day and month) are done.
 - **Working rules:** [CLAUDE.md](CLAUDE.md) holds the architecture, coding and security rules. Every feature starts as a spec in [specs/](specs/).
 
 ## Stack
@@ -61,10 +61,15 @@ All ports listen on `127.0.0.1` only. If a port is already taken on your machine
 | API (nginx) | http://localhost:8000 | `APP_FORWARD_PORT` |
 | phpMyAdmin (local only) | http://localhost:8080 | `PMA_FORWARD_PORT` |
 | MySQL | `127.0.0.1:3306` | `DB_FORWARD_PORT` |
+| Mailpit (local only) | http://localhost:8025 | `MAILPIT_FORWARD_PORT` |
 
 The `scheduler` service runs `php artisan schedule:work`, which records the entries of recurring rules every hour (`ledger:record-due-entries`).
 
-The `queue` service runs `php artisan queue:work` and sends the code emails, in French or English depending on the account. Locally, mail goes to the log (`MAIL_MAILER=log`), so emailed codes can be read in `storage/logs/laravel.log`, or set `AUTH_TEST_MODE=true` to use `000000`.
+The `queue` service runs `php artisan queue:work` and sends the code emails, in French or English depending on the account. Nothing is sent without it running. Locally, the emails go to Mailpit (see below), or set `AUTH_TEST_MODE=true` to use `000000`.
+
+### Reading dev emails
+
+Locally, the app sends mail through Mailpit. Open http://localhost:8025 to read the sign-up, reset and two-step codes. Mailpit is for local development only and is never used in production.
 
 ### Authentication settings
 
@@ -159,6 +164,21 @@ Every money route is nested under a book: `/api/v1/books/{book}/…`. The book's
 - A client may send its own `id` (a UUID) when recording an entry, so a retried request never creates a duplicate.
 - A recurring rule records its entry on each due date, in the book's timezone, through the scheduler. A start date in the past creates the entries due so far at once. Editing a rule changes only the entries still to come.
 - Writes are limited to 60 a minute per account.
+
+## Summary
+
+`GET /api/v1/books/{book}/summary` answers "where does the money go?" for a period (see [specs/007-summary/contract.md](specs/007-summary/contract.md)).
+
+| Period | Query |
+|---|---|
+| This month, in the book's timezone | none |
+| One month | `month=YYYY-MM` |
+| Custom range, both days included, at most one year | `from=YYYY-MM-DD&to=YYYY-MM-DD` |
+
+- It returns the totals per type (income, expense, saving), the balance (`income − expense − saving`) and the number of entries, then the same totals by category (top → group → leaf), by member, by day and by month.
+- Under each "Other" leaf it lists the names typed with their totals; names that differ only in letter case count as one.
+- It is computed in SQL on each request from the book's live entries dated in the period: nothing is stored, so it never goes stale. Future occurrences of recurring rules are not projected.
+- Any member of the book may read it; it has no rate limit of its own.
 
 ## Deploying
 
