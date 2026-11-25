@@ -180,6 +180,22 @@ Every money route is nested under a book: `/api/v1/books/{book}/…`. The book's
 - It is computed in SQL on each request from the book's live entries dated in the period: nothing is stored, so it never goes stale. Future occurrences of recurring rules are not projected.
 - Any member of the book may read it; it has no rate limit of its own.
 
+## Budget
+
+A book can plan each calendar month: an amount per expense category, the income it expects and what it wants to save. The same answer shows what was actually spent (see [specs/008-budget/contract.md](specs/008-budget/contract.md)).
+
+| Route | What it does |
+|---|---|
+| `GET budgets/{YYYY-MM}` | The plan of the month next to what was spent |
+| `PUT budgets/{YYYY-MM}` | Replace the whole month: lines, expected income, planned saving (`{"lines": []}` clears it) |
+| `POST budgets/{YYYY-MM}/copy` | Copy the previous month's plan; `{"replace": true}` overwrites a plan already there |
+
+- A line plans a top category or a group of type expense, never a leaf, and never both a category and its parent. A retired category stays in a month that already had it, but cannot be added.
+- Each line gets its actual spending, a percent (`floor(actual × 100 ÷ planned)`) and a status: `ok` below 85 %, `warning` from 85 % to 100 %, `over` above.
+- `expenses.remaining` ("Reste à dépenser") adds what is left of each line (an overspent line never offsets another), takes off the spending in categories with no line (`off_plan`) and never goes below 0. `days_left` is sent for the current month only.
+- Months run from 2000-01 to 12 months ahead, in the book's timezone; past months can be edited. Actuals are computed on each request, as the summary does. The last save wins.
+- Any member of the book may read and edit it. Saves and copies count in the 60 writes a minute.
+
 ## Deploying
 
 Hosting is not chosen yet. Whatever it is, every deploy runs, in this order:
