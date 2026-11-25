@@ -61,6 +61,11 @@ final class LedgerScenario
         return Category::query()->where('code', $code)->firstOrFail();
     }
 
+    public static function codeOf(string $categoryId): string
+    {
+        return Category::query()->findOrFail($categoryId)->code;
+    }
+
     public static function personalBook(User $user, string $timezone = 'Africa/Tunis', string $currency = 'TND'): Book
     {
         return Book::factory()->ownedByAccount($user)->create(['timezone' => $timezone, 'currency' => $currency]);

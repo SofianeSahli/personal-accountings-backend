@@ -27,7 +27,10 @@ final class SummarizePeriod
 
     private const TOTAL = 'SUM(transactions.amount) as total';
 
-    public function __construct(private readonly FindAccountNames $findAccountNames) {}
+    public function __construct(
+        private readonly FindAccountNames $findAccountNames,
+        private readonly SumByLeaf $sumByLeaf,
+    ) {}
 
     public function handle(Book $book, SummaryPeriod $period): Summary
     {
@@ -150,21 +153,15 @@ final class SummarizePeriod
      */
     private function categories(Book $book, SummaryPeriod $period, Collection $categories): array
     {
-        $rows = $this->entries($book, $period)
-            ->toBase()
-            ->selectRaw('transactions.category_id as category_id, '.self::ENTRIES.', '.self::TOTAL)
-            ->groupBy('transactions.category_id')
-            ->get();
-
         $sums = [];
 
-        foreach ($rows as $row) {
-            $category = $categories->get((string) $row->category_id);
+        foreach ($this->sumByLeaf->handle($book, $period) as $leaf) {
+            $category = $categories->get($leaf->categoryId);
 
             while ($category !== null) {
                 $sums[$category->id] ??= ['total' => 0, 'entries' => 0];
-                $sums[$category->id]['total'] += (int) $row->total;
-                $sums[$category->id]['entries'] += (int) $row->entries;
+                $sums[$category->id]['total'] += $leaf->total;
+                $sums[$category->id]['entries'] += $leaf->entries;
                 $category = $category->parent_id === null ? null : $categories->get($category->parent_id);
             }
         }

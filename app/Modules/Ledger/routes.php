@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Ledger\Controllers\BookController;
+use App\Modules\Ledger\Controllers\BudgetController;
 use App\Modules\Ledger\Controllers\CategoryController;
 use App\Modules\Ledger\Controllers\Middleware\RequireBook;
 use App\Modules\Ledger\Controllers\Middleware\RequireRecurringRule;
@@ -51,5 +52,9 @@ Route::middleware('auth:sanctum')->group(function () use ($writes): void {
         Route::get('other-names', [OtherNameController::class, 'index']);
 
         Route::get('summary', [SummaryController::class, 'show']);
+
+        Route::get('budgets/{month}', [BudgetController::class, 'show']);
+        Route::put('budgets/{month}', [BudgetController::class, 'update'])->middleware($writes);
+        Route::post('budgets/{month}/copy', [BudgetController::class, 'copy'])->middleware($writes);
     });
 });

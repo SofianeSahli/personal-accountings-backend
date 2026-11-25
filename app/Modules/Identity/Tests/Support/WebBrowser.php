@@ -72,6 +72,15 @@ final class WebBrowser
     }
 
     /**
+     * @param  array<string, mixed>  $body
+     * @return TestResponse<Response>
+     */
+    public function putJson(string $uri, array $body = []): TestResponse
+    {
+        return $this->send('PUT', $uri, $body);
+    }
+
+    /**
      * @return TestResponse<Response>
      */
     public function getJson(string $uri): TestResponse

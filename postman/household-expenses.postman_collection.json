@@ -1997,6 +1997,195 @@
           }
         }
       ]
+    },
+    {
+      "name": "Budget (spec 008)",
+      "description": "The plan of a month next to what was spent. See specs/008-budget/contract.md.",
+      "item": [
+        {
+          "name": "Read a month",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/budgets/{{budget_month}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "budgets",
+                "{{budget_month}}"
+              ]
+            },
+            "description": "Reads the budget of `budget_month` (YYYY-MM, from 2000-01 to 12 months after the current month in the book's timezone). A month without a plan answers `has_plan: false` with nulls, actuals still sent. Answers the budget of the month: `month`, `from`, `to`, `currency`, `has_plan`, `days_left` (current month only), `income` (expected, actual), `saving` (planned, actual), `expenses` (planned, actual, off_plan, remaining) and the `lines` (category, planned, actual, percent, status ok/warning/over, retired) in category-tree order. Amounts are integers in the book currency's minor unit.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** none\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`month.date_format`, `month.after_or_equal`, `month.before_or_equal`)"
+          }
+        },
+        {
+          "name": "Save a plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/budgets/{{budget_month}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "budgets",
+                "{{budget_month}}"
+              ]
+            },
+            "description": "Replaces the whole month: lines, expected income and planned saving; what is not sent is cleared. A line's category is a top category or a group of type expense, never a leaf; no two lines may name the same category, a parent and its child, or a retired category new to the month. Last save wins. Answers the budget of the month: `month`, `from`, `to`, `currency`, `has_plan`, `days_left` (current month only), `income` (expected, actual), `saving` (planned, actual), `expenses` (planned, actual, off_plan, remaining) and the `lines` (category, planned, actual, percent, status ok/warning/over, retired) in category-tree order. Amounts are integers in the book currency's minor unit.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, shared with entries and rules)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`month.date_format`, `month.after_or_equal`, `month.before_or_equal`, `lines.present`, `lines.array`, `lines.max`, `lines.category.*` (required, string, distinct, not_found, not_plannable, not_expense, overlaps, retired), `lines.planned.*`, `expected_income.*`, `planned_saving.*`), `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expected_income\": {{budget_expected_income}},\n  \"planned_saving\": {{budget_planned_saving}},\n  \"lines\": [\n    {\"category\": \"{{budget_category}}\", \"planned\": {{budget_planned}}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Clear a plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/budgets/{{budget_month}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "budgets",
+                "{{budget_month}}"
+              ]
+            },
+            "description": "Clears the month by saving an empty plan: the answer has `has_plan: false`.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, shared with entries and rules)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `422 validation.failed` (`month.date_format`, `month.after_or_equal`, `month.before_or_equal`, `lines.present`, `lines.array`, `lines.max`, `lines.category.*` (required, string, distinct, not_found, not_plannable, not_expense, overlaps, retired), `lines.planned.*`, `expected_income.*`, `planned_saving.*`), `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lines\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Copy last month",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/budgets/{{budget_month}}/copy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "budgets",
+                "{{budget_month}}",
+                "copy"
+              ]
+            },
+            "description": "Copies the previous month's lines, expected income and planned saving into `budget_month`, skipping lines on categories retired since. Refused with `409 budget.not_empty` when the month already has a plan. Answers the budget of the month: `month`, `from`, `to`, `currency`, `has_plan`, `days_left` (current month only), `income` (expected, actual), `saving` (planned, actual), `expenses` (planned, actual, off_plan, remaining) and the `lines` (category, planned, actual, percent, status ok/warning/over, retired) in category-tree order. Amounts are integers in the book currency's minor unit.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, shared with entries and rules)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `409 budget.nothing_to_copy`, `409 budget.not_empty`, `422 validation.failed` (`month.date_format`, `month.after_or_equal`, `month.before_or_equal`, `replace.boolean`), `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Copy last month, replacing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/budgets/{{budget_month}}/copy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}",
+                "budgets",
+                "{{budget_month}}",
+                "copy"
+              ]
+            },
+            "description": "Same as \"Copy last month\", but replaces a plan already in `budget_month`.\n\n**Auth:** signed in (bearer token or web session); you must own the personal book or be a live member of its household  \n**Throttle:** ledger-writes (60 writes per minute per account, shared with entries and rules)\n\n**Errors:** `401 auth.unauthenticated`, `404 book.not_found`, `409 budget.nothing_to_copy`, `409 budget.not_empty`, `422 validation.failed` (`month.date_format`, `month.after_or_equal`, `month.before_or_equal`, `replace.boolean`), `429 request.throttled`",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"replace\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
